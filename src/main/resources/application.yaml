@@ -1,0 +1,30 @@
+server:
+  port: 8080
+
+spring:
+  config:
+    import: optional:file:dev.env[.properties]
+  application:
+    name: spring-janggi
+  datasource:
+    driver-class-name: ${DRIVER_CLASS_NAME}
+    url: jdbc:mysql://${RDS_HOST}:${RDS_PORT}/${RDS_DB_NAME}
+    username: ${RDS_USERNAME}
+    password: ${RDS_PASSWORD}
+    hikari:
+      max-lifetime: 170000
+
+  jpa:
+    hibernate:
+      ddl-auto: create
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        use_sql_comments: true
+
+  thymeleaf:
+    cache: false
+    prefix: classpath:/templates/
+    suffix: .html
