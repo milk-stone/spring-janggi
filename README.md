@@ -29,7 +29,7 @@
 * **Game:** 하나의 대국 정보
 * **MoveHistory:** 특정 대국의 기보(이동 내역)
 
-
+<img width="619" height="410" alt="image" src="https://github.com/user-attachments/assets/7b6e7ea1-4037-4696-8a03-83cf9eb9cad9" />
 
 ### 2.3. Use Case / Activity Diagram
 
@@ -51,12 +51,14 @@
 ## 4. 구현할 기능 목록 (To-Do List)
 
 ### 1. 프로젝트 초기 설정
-- [ ] Spring Boot 프로젝트 생성 (Spring Initializr)
-- [ ] `build.gradle` 의존성 설정 (Web, JPA, MySQL, Thymeleaf, Lombok)
-- [ ] `application.yaml` 설정 (MySQL, JPA, Thymeleaf)
-- [ ] Layered Architecture 기반 패키지 구조 정립
+
+- [x] Spring Boot 프로젝트 생성 (Spring Initializr)
+- [x] `build.gradle` 의존성 설정 (Web, JPA, MySQL, Thymeleaf, Lombok)
+- [x] `application.yaml` 설정 (MySQL, JPA, Thymeleaf)
+- [x] Layered Architecture 기반 패키지 구조 정립
 
 ### 2. 핵심 도메인 로직 (`domain.core`)
+
 - [ ] `Position.java` (좌표 `A1`, `B2` 등을 표현하는 객체)
 - [ ] `PieceType.java` (차, 포, 마, 상 등 말의 종류 Enum)
 - [ ] `Team.java` (초, 한 Enum)
@@ -70,8 +72,9 @@
 - [ ] `Board` 상태를 `JSON`으로 직렬화/역직렬화하는 유틸리티 작성
 
 ### 3. 엔티티 및 리포지토리 (`domain.entity`, `domain.repository`)
-- [ ] `Member` 엔티티 작성
-    - [ ] `validate()` 메서드를 통한 유효성 검증 로직 추가
+
+- [x] `Member` 엔티티 작성
+    - [x] `validate()` 메서드를 통한 유효성 검증 로직 추가
 - [ ] `Game` 엔티티 작성
     - [ ] `boardState` (TEXT/JSON): 현재 게임판 상태 스냅샷
     - [ ] `currentTurn` (Enum: CHO, HAN)
@@ -82,6 +85,7 @@
 - [ ] `MoveHistoryRepository` 인터페이스 작성
 
 ### 4. 서비스 및 SSR 웹 구현 (`service`, `controller`)
+
 - [ ] `JanggiService` 작성
     - [ ] `createGame()`: 새 게임 생성
     - [ ] `loadGame(gameId)`: DB에서 `Game`을 로드하고 `Board` 객체로 변환
@@ -102,6 +106,7 @@
     - [ ] 말 이동을 위한 간단한 폼(Form) 또는 링크(GET) 구현
 
 ### 5. 사용자 및 1:1 대결 (고도화)
+
 - [ ] (TBD) 회원 가입 및 로그인 기능
 - [ ] (TBD) `Game` 엔티티에 `choPlayer`, `hanPlayer` (Member) 매핑
 - [ ] (TBD) 대기방 및 1:1 매칭 로직 구현
@@ -111,6 +116,5 @@
 ---
 
 ## 5. 프로젝트 사용 메뉴얼
-
 
 ## 6. 느낀 점
