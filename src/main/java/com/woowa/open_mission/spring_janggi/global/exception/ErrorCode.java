@@ -23,6 +23,12 @@ public enum ErrorCode {
     POSITION_Y_OUT_OF_BOUNDS(HttpStatus.BAD_REQUEST, "PE_004", "Y 좌표가 장기판 범위를 벗어났습니다."),
     // * Piece
     PIECE_PARAMETER_REQUIRED(HttpStatus.BAD_REQUEST, "PE_001", "팀과 기물 종류는 필수입니다."),
+    // * Board
+    PIECE_NOT_FOUND(HttpStatus.BAD_REQUEST, "BE_001", "해당 위치에 기물이 없습니다."),
+    IS_NOT_YOUR_TURN(HttpStatus.BAD_REQUEST, "BE_002", "자신의 기물만 움직일 수 있습니다."),
+    CANNOT_MOVE_TO_SAME_POSITION(HttpStatus.BAD_REQUEST, "BE_003", "제자리로 이동할 수 없습니다."),
+    CANNOT_CAPTURE_SAME_TEAM(HttpStatus.BAD_REQUEST, "BE_004", "아군은 잡을 수 없습니다."),
+    INVALID_MOVE_RULE(HttpStatus.BAD_REQUEST, "BE_005", "해당 기물의 이동 규칙에 어긋납니다.");
     private final HttpStatus status;
     private final String code;
     private final String message;
