@@ -1,4 +1,7 @@
 package com.woowa.open_mission.spring_janggi.domain.repository;
 
-public interface MoveHistoryRepository {
+import com.woowa.open_mission.spring_janggi.domain.entity.MoveHistory;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface MoveHistoryRepository extends JpaRepository<MoveHistory, Long> {
 }
