@@ -34,8 +34,10 @@
 ### 2.3. Use Case / Activity Diagram
 
 - **Use Case Diagram**
+<img width="542" height="558" alt="스크린샷 2025-11-24 오후 10 20 51" src="https://github.com/user-attachments/assets/7c18cb89-c88f-4001-8c27-871e297d50c5" />
 
 - **Activity Diagram**
+<img width="607" height="1063" alt="스크린샷 2025-11-24 오후 10 19 50" src="https://github.com/user-attachments/assets/47b8b6a0-6e75-4651-b1bd-117cc590116f" />
 
 
 ---
@@ -139,7 +141,37 @@
 
 ---
 
-## 5. 프로젝트 사용 메뉴얼 (Installation & Run)
+## 5. 구현 스크린샷
+
+1. 로그인/회원가입
+<img width="1246" height="827" alt="image" src="https://github.com/user-attachments/assets/630ae18a-35c0-490b-8c1b-38e5b8f2b281" />
+이메일과 비밀번호를 이용한 간편 회원가입 및 로그인 기능을 제공합니다. 세션 기반 인증을 통해 로그인된 사용자만 대국 및 전적 조회가 가능합니다.<br>
+<br>
+2. 로비
+<img width="1290" height="1195" alt="image" src="https://github.com/user-attachments/assets/4a936a08-ef38-4ed8-86b4-78dc5211c50d" />
+게임의 대기실 역할을 하는 로비 화면입니다. 상단에서는 현재 대기 중이거나 진행 중인 방 목록을 실시간으로 확인할 수 있으며, 하단에서는 본인의 지난 대국 기록(승/패 결과 및 기보)을 조회할 수 있습니다.<br>
+<br>
+3. 장기 방 입장
+<img width="1290" height="1195" alt="image" src="https://github.com/user-attachments/assets/7f45c4b9-e77a-4edb-915c-b9939cb0a7a6" />
+대기 상태(Waiting)인 방에 '참가하기' 버튼을 눌러 입장할 수 있습니다. 호스트(Host)와 게스트(Guest)가 모두 입장하면 게임 상태가 진행 중(In Progress)으로 변경되며 대국이 시작됩니다.<br>
+<br>
+- 대국 진행
+<img width="1290" height="1195" alt="image" src="https://github.com/user-attachments/assets/a1f94e69-d68c-4747-985a-88f2102d42ce" />
+상대방의 수로 인해 왕이 위협받는 '장군' 상태가 되면, 왕 기물에 붉은색 점멸 효과와 함께 경고 알림이 표시됩니다. 이때 시스템은 왕이 잡히게 되는 수(자살수)를 원천적으로 차단하여, 사용자가 반드시 장군을 멍군하도록 유도합니다.
+<br>
+<img width="1290" height="1195" alt="image" src="https://github.com/user-attachments/assets/64e670c1-3363-4d42-8e9b-c0f17901fafc" />
+장군 상태에서 사용자가 더 이상 방어할 수 있는 수가 없다면 '외통수'로 판정되어 게임이 즉시 종료됩니다. 종료 시 승리한 플레이어 정보와 총 진행 수(Move Count)가 포함된 결과 화면이 나타납니다.<br>
+<br>
+4. 복기
+<img width="1290" height="1195" alt="image" src="https://github.com/user-attachments/assets/4ee33248-cf5f-49ac-aa3f-091015143057" />
+대국이 끝나고 로비로 돌아가면, 이전 대국의 기록이 저장되고 로비에 보여집니다.
+<br>
+<img width="1290" height="1195" alt="스크린샷 2025-11-24 오후 10 49 28" src="https://github.com/user-attachments/assets/971c90ae-0894-4db9-8f07-d588272ec7ec" />
+종료된 대국은 자동으로 저장되어 로비의 전적 리스트에 반영됩니다. '복기 하기' 기능을 통해 당시의 대국 내용을 처음부터 끝까지 한 수씩 되돌려보며 경기 내용을 분석할 수 있습니다.<br>
+<br>
+
+
+## 6. 프로젝트 사용 메뉴얼 (Installation & Run)
 
 이 프로젝트를 로컬 환경에서 실행하기 위한 단계입니다.
 
@@ -203,12 +235,12 @@ java -jar build/libs/spring-janggi-0.0.1-SNAPSHOT.jar
 
 - **URL**: http://localhost:8080
 
-## 6. 사용자 이용 흐름 (User Flow)
+## 7. 사용자 이용 흐름 (User Flow)
 
 본 장기 게임은 **실시간 1:1 대전** 게임이므로, 원활한 테스트를 위해 **두 개의 브라우저**가 필요합니다.
 
 ### 1️⃣ 접속 및 회원가입
-1. **[브라우저 A]**를 열고 `http://localhost:8080`에 접속합니다.
+1. **[브라우저 A]** 를 열고 `http://localhost:8080`에 접속합니다.
 2. 로그인 화면 하단의 **'회원가입'**을 통해 계정을 생성합니다. (예: `user1`)
 3. 생성한 계정으로 **로그인**하여 대기실(Lobby)로 입장합니다.
 
@@ -237,7 +269,7 @@ java -jar build/libs/spring-janggi-0.0.1-SNAPSHOT.jar
 ### 6️⃣ 게임 종료 및 복기
 * **외통수(Checkmate)**가 발생하면 승리 메시지와 함께 게임이 종료됩니다.
 * 종료 모달창에서 **[복기 하기]**를 누르면, 방금 둔 대국을 처음부터 다시 돌려볼 수 있습니다.
-* **[로비로 나가기]**를 눌러 대기실로 돌아가면, 하단 **'내 지난 대국'** 섹션에 전적과 함께 기록이 남습니다.
+* **[로비로 나가기]** 를 눌러 대기실로 돌아가면, 하단 **'내 지난 대국'** 섹션에 전적과 함께 기록이 남습니다.
 
-## 7. 느낀 점
+## 8. 느낀 점
 
