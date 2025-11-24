@@ -29,8 +29,11 @@ public class LobbyController {
         Member loginMember = (Member) session.getAttribute("loginMember");
         List<Game> games = janggiService.findAllGames();
 
+        List<Game> myGames = janggiService.findMyFinishedGames(loginMember.getId());
+
         model.addAttribute("member", loginMember);
         model.addAttribute("games", games);
+        model.addAttribute("myGames", myGames);
         return "lobby";
     }
 

@@ -1,6 +1,7 @@
 package com.woowa.open_mission.spring_janggi.controller;
 
 import com.woowa.open_mission.spring_janggi.controller.dto.GameStatusResponse;
+import com.woowa.open_mission.spring_janggi.controller.dto.MoveHistoryResponse;
 import com.woowa.open_mission.spring_janggi.controller.dto.MoveRequest;
 import com.woowa.open_mission.spring_janggi.domain.core.Board;
 import com.woowa.open_mission.spring_janggi.domain.core.Team;
@@ -12,6 +13,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @Controller
 @RequiredArgsConstructor
@@ -44,5 +47,19 @@ public class JanggiController {
         if (loginMember == null) return "redirect:/login";
         Long gameId = janggiService.createRoom(loginMember.getNickname() + "님의 대국", loginMember);
         return "redirect:/games/" + gameId;
+    }
+
+    @GetMapping("/games/{id}/review")
+    public String reviewGame(@PathVariable Long id, Model model) {
+        Game game = janggiService.getGame(id);
+        List<MoveHistoryResponse> history = janggiService.getGameHistory(id);
+
+        Board initialBoard = new Board();
+
+        model.addAttribute("game", game);
+        model.addAttribute("board", initialBoard);
+        model.addAttribute("history", history);
+
+        return "review";
     }
 }

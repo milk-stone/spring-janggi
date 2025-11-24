@@ -4,15 +4,15 @@
     <meta charset="UTF-8">
     <title>Spring Boot Janggi</title>
     <style>
-        /* === [변수 정의] === */
+        /* === [변수 정의] 색상 관리 === */
         :root {
             --bg-color: #f4f4f4;
-            --board-bg-color: #e6b87d;
-            --line-color: #5d4037;
+            --board-bg-color: #e6b87d; /* 장기판 나무색 */
+            --line-color: #5d4037;     /* 선 색상 */
             --highlight-color: rgba(255, 215, 0, 0.8);
-            --cho-color: #2e7d32;
-            --han-color: #c62828;
-            --movable-color: rgba(46, 204, 113, 0.8); /* 이동 가능 표시 색상 (초록) */
+            --cho-color: #2e7d32; /* 초나라 (녹색) */
+            --han-color: #c62828; /* 한나라 (적색) */
+            --movable-color: rgba(46, 204, 113, 0.8);
         }
 
         body {
@@ -40,6 +40,7 @@
         .turn-CHO { background-color: var(--cho-color); }
         .turn-HAN { background-color: var(--han-color); }
 
+        /* === 장기판 컨테이너 === */
         .board-container {
             background-color: var(--board-bg-color);
             padding: 30px;
@@ -58,20 +59,27 @@
             position: relative;
         }
 
-        /* === 칸 (Cell) === */
+        /* === 개별 칸 (Cell) === */
         .cell {
-            position: relative; width: 60px; height: 60px;
-            box-sizing: border-box; display: flex; justify-content: center; align-items: center;
-            cursor: pointer; z-index: 1;
+            position: relative;
+            width: 60px; height: 60px;
+            box-sizing: border-box;
+            display: flex; justify-content: center; align-items: center;
+            cursor: pointer;
+            z-index: 1;
         }
+
+        /* 십자선 그리기 */
         .cell::before { content: ''; position: absolute; top: 50%; left: 0; width: 100%; height: 2px; background-color: var(--line-color); z-index: -1; transform: translateY(-50%); }
         .cell::after { content: ''; position: absolute; top: 0; left: 50%; height: 100%; width: 2px; background-color: var(--line-color); z-index: -1; transform: translateX(-50%); }
 
+        /* 가장자리 선 처리 */
         .cell.top-edge::after { top: 50%; height: 50%; }
         .cell.bottom-edge::after { height: 50%; }
         .cell.left-edge::before { left: 50%; width: 50%; }
         .cell.right-edge::before { width: 50%; }
 
+        /* === 궁성 대각선 오버레이 === */
         .palace-overlay { position: absolute; width: 120px; height: 120px; pointer-events: none; z-index: 0; }
         .palace-top { left: 210px; top: 30px; }
         .palace-bottom { left: 210px; top: 450px; }
@@ -79,7 +87,8 @@
         .palace-overlay::before { transform-origin: 0 0; transform: rotate(45deg); }
         .palace-overlay::after { left: auto; right: 0; transform-origin: 100% 0; transform: rotate(-45deg); }
 
-        /* === 기물 (Piece) === */
+
+        /* === 기물 (Piece) 디자인 === */
         .piece {
             border-radius: 50%;
             display: flex; justify-content: center; align-items: center;
@@ -90,14 +99,16 @@
             z-index: 10;
             clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%);
             transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
             font-family: "Gungsuh", "Batang", serif;
-            line-height: 1; padding-bottom: 2px;
+            line-height: 1;
+            padding-bottom: 2px;
         }
 
         .piece.CHO { color: var(--cho-color); border-color: #1b5e20; }
         .piece.HAN { color: var(--han-color); border-color: #b71c1c; }
 
-        /* 기물 크기 */
+        /* 기물 크기 차등 적용 */
         .piece.SOLDIER, .piece.SA { width: 40px; height: 40px; font-size: 20px; }
         .piece.CHA, .piece.PO, .piece.MA, .piece.SANG { width: 48px; height: 48px; font-size: 26px; }
         .piece.GUNG { width: 56px; height: 56px; font-size: 34px; border-width: 3px; }
@@ -111,7 +122,7 @@
         .cell.selected::before, .cell.selected::after { background-color: #ffd700; z-index: 2; height: 3px; width: 3px; }
         .cell.selected { background: radial-gradient(circle, rgba(255, 215, 0, 0.3) 20%, transparent 70%); }
 
-        /* === [추가] 이동 가능 위치 표시 (초록색 점) === */
+        /* 이동 가능 위치 표시 */
         .cell.movable { cursor: pointer; }
         .cell.movable::after {
             content: ''; position: absolute;
@@ -119,15 +130,14 @@
             width: 18px; height: 18px;
             background-color: var(--movable-color);
             border-radius: 50%;
-            z-index: 5; /* 선보다 위, 기물보다 아래 */
+            z-index: 5;
             box-shadow: 0 0 5px var(--movable-color);
         }
-        /* 적군을 잡을 수 있는 경우 (빨간 테두리 점) */
         .cell.movable:has(.piece)::after {
             background-color: transparent;
-            border: 3px solid rgba(231, 76, 60, 0.9); /* 빨간색 */
+            border: 3px solid rgba(231, 76, 60, 0.9);
             width: 45px; height: 45px;
-            z-index: 20; /* 기물 위로 표시 */
+            z-index: 20;
             box-shadow: 0 0 10px rgba(231, 76, 60, 0.6);
         }
 
@@ -144,9 +154,13 @@
         .modal-content { background-color: white; padding: 30px 50px; border-radius: 10px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); border: 5px solid #e6b87d; min-width: 300px; }
         .winner-text { font-size: 2em; font-weight: bold; margin: 20px 0; color: #333; }
         .modal-buttons { margin-top: 30px; display: flex; gap: 15px; justify-content: center; }
+
+        /* 버튼 스타일 */
         .btn-modal { padding: 10px 20px; border-radius: 5px; text-decoration: none; font-weight: bold; color: white; cursor: pointer; border: none; }
-        .btn-lobby { background-color: #555; }
-        .btn-new { background-color: #2e7d32; }
+        .btn-lobby { background-color: #7f8c8d; } /* 회색 */
+        .btn-review { background-color: #e67e22; } /* 주황색 (복기) */
+        .btn-new { background-color: #2e7d32; } /* 초록색 */
+
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
     </style>
 </head>
@@ -218,6 +232,7 @@
     </div>
 </div>
 
+<!-- [수정] 게임 종료 모달 (버튼 추가됨) -->
 <div th:if="${game.status.name() == 'FINISHED'}" class="game-over-overlay">
     <div class="modal-content">
         <h1>🏆 게임 종료! 🏆</h1>
@@ -225,9 +240,12 @@
             <span th:text="${game.winner.description}"></span>
         </div>
         <p th:text="'총 ' + ${game.moveCount} + '수 만에 승부가 났습니다.'"></p>
+
         <div class="modal-buttons">
-            <a href="/" class="btn-modal btn-lobby">로비로 나가기</a>
-            <a href="/games/new" class="btn-modal btn-new">다시 한 판 하기</a>
+            <a href="/" class="btn-modal btn-lobby">로비</a>
+            <!-- [추가된 버튼] -->
+            <a th:href="@{/games/{id}/review(id=${game.id})}" class="btn-modal btn-review">복기 하기</a>
+            <a href="/games/new" class="btn-modal btn-new">재대국</a>
         </div>
     </div>
 </div>
@@ -280,12 +298,10 @@
 
     let selectedFrom = null;
 
-    // === [추가] 마커 초기화 함수 ===
     function clearMovables() {
         document.querySelectorAll('.cell.movable').forEach(el => el.classList.remove('movable'));
     }
 
-    // === [추가] 이동 가능 위치 API 호출 및 표시 ===
     function showMovablePositions(from) {
         fetch(`/api/games/${gameId}/movable?from=${from}`)
             .then(res => res.json())
@@ -330,19 +346,16 @@
             }
             selectedFrom = clickedCoord;
             cellElement.classList.add('selected');
-
-            // [추가] 이동 가능 위치 표시
             showMovablePositions(clickedCoord);
-
         } else {
             if (selectedFrom === clickedCoord) {
                 document.querySelectorAll('.cell').forEach(el => el.classList.remove('selected'));
-                clearMovables(); // [추가] 취소 시 마커 제거
+                clearMovables();
                 selectedFrom = null;
                 return;
             }
             movePiece(selectedFrom, clickedCoord);
-            clearMovables(); // [추가] 이동 요청 후 마커 제거
+            clearMovables();
         }
     }
 

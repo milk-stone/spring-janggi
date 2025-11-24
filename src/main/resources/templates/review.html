@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>장기 복기 (Review)</title>
+    <style>
+        /* === 기본 스타일 === */
+        :root {
+            --bg-color: #f4f4f4;
+            --board-bg-color: #e6b87d;
+            --line-color: #5d4037;
+            --highlight-color: rgba(255, 215, 0, 0.8);
+            --cho-color: #2e7d32;
+            --han-color: #c62828;
+        }
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px;
+            margin: 0;
+        }
+
+        h1 { margin-bottom: 20px; color: #333; }
+
+        /* === 장기판 (기존과 동일 스타일) === */
+        .board-container {
+            background-color: var(--board-bg-color);
+            padding: 30px;
+            border-radius: 5px;
+            border: 5px solid #8d6e63;
+            position: relative;
+            user-select: none;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            margin-bottom: 30px; /* 하단 버튼과 간격 */
+        }
+        .janggi-board { display: grid; grid-template-columns: repeat(9, 60px); grid-template-rows: repeat(10, 60px); position: relative; }
+
+        .cell { position: relative; width: 60px; height: 60px; box-sizing: border-box; display: flex; justify-content: center; align-items: center; z-index: 1; }
+        .cell::before { content: ''; position: absolute; top: 50%; left: 0; width: 100%; height: 2px; background-color: var(--line-color); z-index: -1; transform: translateY(-50%); }
+        .cell::after { content: ''; position: absolute; top: 0; left: 50%; height: 100%; width: 2px; background-color: var(--line-color); z-index: -1; transform: translateX(-50%); }
+        .cell.top-edge::after { top: 50%; height: 50%; }
+        .cell.bottom-edge::after { height: 50%; }
+        .cell.left-edge::before { left: 50%; width: 50%; }
+        .cell.right-edge::before { width: 50%; }
+        .palace-overlay { position: absolute; width: 120px; height: 120px; pointer-events: none; z-index: 0; }
+        .palace-top { left: 210px; top: 30px; }
+        .palace-bottom { left: 210px; top: 450px; }
+        .palace-overlay::before, .palace-overlay::after { content: ''; position: absolute; background-color: var(--line-color); width: 170px; height: 2px; top: 0; left: 0; }
+        .palace-overlay::before { transform-origin: 0 0; transform: rotate(45deg); }
+        .palace-overlay::after { left: auto; right: 0; transform-origin: 100% 0; transform: rotate(-45deg); }
+
+        /* 기물 스타일 (한자 적용) */
+        .piece {
+            border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold;
+            background-color: #fdf5e6; border: 2px solid #8d6e63; box-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            z-index: 10; font-family: "Gungsuh", "Batang", serif; line-height: 1; padding-bottom: 2px;
+            transition: transform 0.2s;
+        }
+        .piece.CHO { color: var(--cho-color); border-color: #1b5e20; }
+        .piece.HAN { color: var(--han-color); border-color: #b71c1c; }
+        .piece.SOLDIER, .piece.SA { width: 40px; height: 40px; font-size: 20px; }
+        .piece.CHA, .piece.PO, .piece.MA, .piece.SANG { width: 48px; height: 48px; font-size: 26px; }
+        .piece.GUNG { width: 56px; height: 56px; font-size: 34px; border-width: 3px; }
+
+        /* 복기 하이라이트 (마지막 수) */
+        .last-move {
+            box-shadow: inset 0 0 0 3px #3498db !important;
+            background-color: rgba(52, 152, 219, 0.2);
+        }
+
+        /* === [수정] 컨트롤 패널 (하단 배치) === */
+        .control-panel {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            align-items: center;
+            background: white;
+            padding: 15px 40px;
+            border-radius: 50px; /* 둥근 모양 */
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .btn {
+            padding: 10px 25px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            color: white;
+            font-size: 1em;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 80px;
+            transition: transform 0.1s, opacity 0.1s;
+        }
+        .btn:active { transform: scale(0.95); }
+
+        .btn-prev { background-color: #7f8c8d; }
+        .btn-next { background-color: #2e7d32; }
+        .btn-lobby { background-color: #5d4037; margin-left: 20px;}
+
+        .move-counter {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #333;
+            min-width: 80px;
+            text-align: center;
+            margin: 0 10px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>📜 대국 복기 (Review)</h1>
+
+<!-- 장기판 -->
+<div class="board-container">
+    <div class="janggi-board">
+        <div class="palace-overlay palace-top"></div>
+        <div class="palace-overlay palace-bottom"></div>
+        <th:block th:each="y : ${#numbers.sequence(0, 9)}">
+            <th:block th:each="x : ${#numbers.sequence(0, 8)}">
+                <div class="cell" th:id="'cell-' + ${x} + '-' + ${y}"
+                     th:with="piece=${board.getPiece(x, y)}"
+                     th:classappend="${y==0?'top-edge':''} + ' ' + ${y==9?'bottom-edge':''} + ' ' + ${x==0?'left-edge':''} + ' ' + ${x==8?'right-edge':''}">
+
+                    <div th:if="${piece != null}" class="piece"
+                         th:classappend="${piece.team} + ' ' + ${piece.type}">
+                            <span th:switch="${piece.type.name()}">
+                                <span th:case="'GUNG'" th:text="${piece.team.name() == 'CHO' ? '楚' : '漢'}"></span>
+                                <span th:case="'SOLDIER'" th:text="${piece.team.name() == 'CHO' ? '卒' : '兵'}"></span>
+                                <span th:case="'CHA'">車</span>
+                                <span th:case="'PO'">包</span>
+                                <span th:case="'MA'">馬</span>
+                                <span th:case="'SANG'">象</span>
+                                <span th:case="'SA'">士</span>
+                            </span>
+                    </div>
+
+                </div>
+            </th:block>
+        </th:block>
+    </div>
+</div>
+
+<!-- [수정] 하단 컨트롤 패널 -->
+<div class="control-panel">
+    <button class="btn btn-prev" onclick="goPrev()">◀ 이전</button>
+
+    <!-- 현재 수 표시 -->
+    <div class="move-counter" id="moveCounter">0수</div>
+
+    <button class="btn btn-next" onclick="goNext()">다음 ▶</button>
+
+    <a href="/" class="btn btn-lobby">로비로 나가기</a>
+</div>
+
+<script th:inline="javascript">
+    const historyData = [[${history}]];
+    let currentIndex = 0;
+
+    function parseCoord(coordStr) {
+        const x = coordStr.charCodeAt(0) - 65;
+        const y = parseInt(coordStr.substring(1)) - 1;
+        return { x, y };
+    }
+
+    function updateUI(moveIndex) {
+        // 수 카운트 업데이트
+        document.getElementById('moveCounter').innerText = moveIndex + "수";
+
+        // 보드 하이라이트 업데이트
+        document.querySelectorAll('.cell').forEach(el => el.classList.remove('last-move'));
+        if (moveIndex > 0) {
+            const lastMove = historyData[moveIndex - 1];
+            const from = parseCoord(lastMove.from);
+            const to = parseCoord(lastMove.to);
+            document.getElementById(`cell-${from.x}-${from.y}`).classList.add('last-move');
+            document.getElementById(`cell-${to.x}-${to.y}`).classList.add('last-move');
+        }
+    }
+
+    function goNext() {
+        if (currentIndex >= historyData.length) {
+            alert("마지막 수입니다.");
+            return;
+        }
+
+        const move = historyData[currentIndex];
+        const from = parseCoord(move.from);
+        const to = parseCoord(move.to);
+
+        const fromCell = document.getElementById(`cell-${from.x}-${from.y}`);
+        const toCell = document.getElementById(`cell-${to.x}-${to.y}`);
+
+        const piece = fromCell.querySelector('.piece');
+        const targetPiece = toCell.querySelector('.piece');
+
+        if (piece) {
+            if (targetPiece) {
+                // 잡힌 기물 임시 저장 (복구용)
+                move.capturedDom = targetPiece.outerHTML;
+                toCell.removeChild(targetPiece);
+            }
+            toCell.appendChild(piece);
+        }
+
+        currentIndex++;
+        updateUI(currentIndex);
+    }
+
+    function goPrev() {
+        if (currentIndex <= 0) {
+            alert("대국 시작 상태입니다.");
+            return;
+        }
+
+        currentIndex--;
+        const move = historyData[currentIndex];
+        const from = parseCoord(move.from);
+        const to = parseCoord(move.to);
+
+        const fromCell = document.getElementById(`cell-${from.x}-${from.y}`);
+        const toCell = document.getElementById(`cell-${to.x}-${to.y}`);
+
+        const piece = toCell.querySelector('.piece');
+
+        if (piece) {
+            fromCell.appendChild(piece);
+        }
+
+        if (move.capturedDom) {
+            toCell.innerHTML += move.capturedDom;
+            delete move.capturedDom;
+        }
+
+        updateUI(currentIndex);
+    }
+</script>
+</body>
+</html>

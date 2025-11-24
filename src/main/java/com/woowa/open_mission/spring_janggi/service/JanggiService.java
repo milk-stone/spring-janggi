@@ -1,5 +1,6 @@
 package com.woowa.open_mission.spring_janggi.service;
 
+import com.woowa.open_mission.spring_janggi.controller.dto.MoveHistoryResponse;
 import com.woowa.open_mission.spring_janggi.domain.core.*;
 import com.woowa.open_mission.spring_janggi.domain.entity.Game;
 import com.woowa.open_mission.spring_janggi.domain.entity.Member;
@@ -142,5 +143,16 @@ public class JanggiService {
         return board.getMovablePositions(from).stream()
                 .map(Position::toString)
                 .toList();
+    }
+
+    public List<MoveHistoryResponse> getGameHistory(Long gameId) {
+        return moveHistoryRepository.findAllByGameIdOrderByMoveNumberAsc(gameId)
+                .stream()
+                .map(MoveHistoryResponse::from)
+                .toList();
+    }
+
+    public List<Game> findMyFinishedGames(Long memberId) {
+        return gameRepository.findFinishedGamesByMemberId(memberId);
     }
 }
