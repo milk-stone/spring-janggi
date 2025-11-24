@@ -7,11 +7,11 @@
         /* === [변수 정의] 색상 관리 === */
         :root {
             --bg-color: #f4f4f4;
-            --board-bg-color: #e6b87d;
-            --line-color: #5d4037;
+            --board-bg-color: #e6b87d; /* 장기판 나무색 */
+            --line-color: #5d4037;     /* 선 색상 */
             --highlight-color: rgba(255, 215, 0, 0.8);
-            --cho-color: #2e7d32;
-            --han-color: #c62828;
+            --cho-color: #2e7d32; /* 초나라 (녹색) */
+            --han-color: #c62828; /* 한나라 (적색) */
         }
 
         body {
@@ -35,9 +35,7 @@
             text-align: center;
         }
 
-        .turn-badge {
-            font-weight: bold; padding: 5px 10px; border-radius: 4px; color: white;
-        }
+        .turn-badge { font-weight: bold; padding: 5px 10px; border-radius: 4px; color: white; }
         .turn-CHO { background-color: var(--cho-color); }
         .turn-HAN { background-color: var(--han-color); }
 
@@ -51,12 +49,7 @@
             border: 5px solid #8d6e63;
             position: relative;
         }
-
-        /* 내 턴이 아닐 때 시각적 효과 (선택 사항) */
-        .board-container.inactive {
-            opacity: 0.9;
-            cursor: not-allowed;
-        }
+        .board-container.inactive { opacity: 0.9; cursor: not-allowed; }
 
         .janggi-board {
             display: grid;
@@ -65,7 +58,7 @@
             position: relative;
         }
 
-        /* === 개별 칸 === */
+        /* === 개별 칸 (Cell) === */
         .cell {
             position: relative;
             width: 60px; height: 60px;
@@ -75,74 +68,96 @@
             z-index: 1;
         }
 
+        /* 십자선 그리기 */
         .cell::before { content: ''; position: absolute; top: 50%; left: 0; width: 100%; height: 2px; background-color: var(--line-color); z-index: -1; transform: translateY(-50%); }
         .cell::after { content: ''; position: absolute; top: 0; left: 50%; height: 100%; width: 2px; background-color: var(--line-color); z-index: -1; transform: translateX(-50%); }
 
+        /* 가장자리 선 처리 */
         .cell.top-edge::after { top: 50%; height: 50%; }
         .cell.bottom-edge::after { height: 50%; }
         .cell.left-edge::before { left: 50%; width: 50%; }
         .cell.right-edge::before { width: 50%; }
 
-        /* === 궁성 대각선 === */
-        .palace-overlay {
-            position: absolute; width: 120px; height: 120px; pointer-events: none; z-index: 0;
-        }
+        /* === 궁성 대각선 오버레이 === */
+        .palace-overlay { position: absolute; width: 120px; height: 120px; pointer-events: none; z-index: 0; }
         .palace-top { left: 210px; top: 30px; }
         .palace-bottom { left: 210px; top: 450px; }
-        .palace-overlay::before, .palace-overlay::after {
-            content: ''; position: absolute; background-color: var(--line-color); width: 170px; height: 2px; top: 0; left: 0;
-        }
+        .palace-overlay::before, .palace-overlay::after { content: ''; position: absolute; background-color: var(--line-color); width: 170px; height: 2px; top: 0; left: 0; }
         .palace-overlay::before { transform-origin: 0 0; transform: rotate(45deg); }
         .palace-overlay::after { left: auto; right: 0; transform-origin: 100% 0; transform: rotate(-45deg); }
 
-        /* === 기물 === */
+
+        /* === 기물 (Piece) 디자인 === */
         .piece {
-            width: 52px; height: 52px; border-radius: 50%;
+            border-radius: 50%;
             display: flex; justify-content: center; align-items: center;
-            font-size: 26px; font-weight: bold;
-            background-color: #fdf5e6; border: 2px solid #8d6e63;
-            box-shadow: 2px 2px 4px rgba(0,0,0,0.3); z-index: 10;
+            font-weight: bold;
+            background-color: #fdf5e6;
+            border: 2px solid #8d6e63;
+            box-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            z-index: 10;
             clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%);
-            transition: transform 0.1s ease;
+            /* 부드러운 전환 효과 */
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+            font-family: "Gungsuh", "Batang", serif;
+            line-height: 1;
+            padding-bottom: 2px;
         }
-        .cell.selected .piece {
-            box-shadow: 0 0 0 4px var(--highlight-color), 2px 2px 4px rgba(0,0,0,0.3); transform: scale(1.1);
-        }
-        .cell.selected::before, .cell.selected::after { background-color: var(--highlight-color); z-index: 2; }
-        .cell.selected { background: radial-gradient(circle, var(--highlight-color) 10%, transparent 11%); }
 
         .piece.CHO { color: var(--cho-color); border-color: #1b5e20; }
         .piece.HAN { color: var(--han-color); border-color: #b71c1c; }
-        .piece.SOLDIER { font-size: 22px; width: 44px; height: 44px; }
-        .piece.GUNG { font-size: 32px; width: 56px; height: 56px; border-width: 3px; }
-        .piece.king-in-check {
-            box-shadow: 0 0 15px 5px rgba(255, 0, 0, 0.8); /* 붉은 광채 */
-            animation: pulse 1s infinite alternate; /* 깜빡임 효과 */
-            border-color: #ff0000 !important;
+
+        /* 기물 크기 차등 적용 */
+        .piece.SOLDIER, .piece.SA { width: 40px; height: 40px; font-size: 20px; }
+        .piece.CHA, .piece.PO, .piece.MA, .piece.SANG { width: 48px; height: 48px; font-size: 26px; }
+        .piece.GUNG { width: 56px; height: 56px; font-size: 34px; border-width: 3px; }
+
+        /* === [수정] 선택 효과 (강조 강화) === */
+        .cell.selected .piece {
+            /* 1. 크기 확대 및 위로 살짝 띄우기 (들고 있는 느낌) */
+            transform: scale(1.2) translateY(-5px);
+
+            /* 2. 입체적인 그림자와 발광 효과 */
+            box-shadow:
+                    0 0 0 3px #ffd700, /* 선명한 금색 테두리 */
+                    0 10px 20px rgba(0,0,0,0.4), /* 아래쪽 깊은 그림자 (높이감) */
+                    0 0 15px 5px rgba(255, 215, 0, 0.6); /* 주변 금색 광채 */
+
+            /* 3. 다른 기물 위로 확실히 올라오게 함 */
+            z-index: 100;
+
+            /* 4. 배경색 살짝 밝게 */
+            background-color: #fffcee;
+            border-color: #b8860b; /* 테두리 색상 진하게 */
         }
 
-        @keyframes pulse {
-            from { transform: scale(1); }
-            to { transform: scale(1.1); }
+        /* 선택된 칸 바닥 십자선 강조 */
+        .cell.selected::before, .cell.selected::after {
+            background-color: #ffd700; /* 금색 */
+            z-index: 2;
+            height: 3px; width: 3px; /* 선을 점처럼 보이게 하거나 그대로 유지 */
         }
-        /* === 모달 === */
-        .game-over-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0, 0, 0, 0.6);
-            display: flex; justify-content: center; align-items: center;
-            z-index: 100; animation: fadeIn 0.5s;
+        /* 선택된 빈 칸(이동 가능 위치) 표시용 */
+        .cell.selected {
+            /* 은은한 금색 원형 그라데이션 */
+            background: radial-gradient(circle, rgba(255, 215, 0, 0.3) 20%, transparent 70%);
         }
-        .modal-content {
-            background-color: white; padding: 30px 50px; border-radius: 10px;
-            text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            border: 5px solid #e6b87d; min-width: 300px;
+
+        /* 위기에 처한 왕 (장군) 시각 효과 */
+        .piece.king-in-check {
+            box-shadow: 0 0 15px 5px rgba(255, 0, 0, 0.8);
+            animation: pulse 1s infinite alternate;
+            border-color: #ff0000 !important;
         }
+        @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.1); } }
+
+        /* 모달 */
+        .game-over-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: center; z-index: 100; animation: fadeIn 0.5s; }
+        .modal-content { background-color: white; padding: 30px 50px; border-radius: 10px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); border: 5px solid #e6b87d; min-width: 300px; }
         .winner-text { font-size: 2em; font-weight: bold; margin: 20px 0; color: #333; }
         .modal-buttons { margin-top: 30px; display: flex; gap: 15px; justify-content: center; }
-        .btn-modal {
-            padding: 10px 20px; border-radius: 5px; text-decoration: none;
-            font-weight: bold; color: white; cursor: pointer; border: none;
-        }
+        .btn-modal { padding: 10px 20px; border-radius: 5px; text-decoration: none; font-weight: bold; color: white; cursor: pointer; border: none; }
         .btn-lobby { background-color: #555; }
         .btn-new { background-color: #2e7d32; }
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
@@ -153,30 +168,15 @@
 <h1>♟️ Spring Boot 장기</h1>
 
 <div class="game-info">
-    <!-- [추가] 내 플레이 정보 표시 -->
+    <!-- 플레이어 정보 배지 -->
     <div style="margin-bottom: 15px; padding: 10px; background-color: #f9f9f9; border-radius: 5px; border: 1px solid #ddd;">
         <span style="font-size: 1.1em; color: #333;">당신은 </span>
-
-        <!-- 초 플레이어일 때 -->
-        <span th:if="${loginMember.id == game.choPlayer.id}"
-              style="color: white; background-color: #2e7d32; padding: 5px 10px; border-radius: 4px; font-weight: bold;">
-                초(楚) - 초록
-            </span>
-
-        <!-- 한 플레이어일 때 -->
-        <span th:if="${game.hanPlayer != null && loginMember.id == game.hanPlayer.id}"
-              style="color: white; background-color: #c62828; padding: 5px 10px; border-radius: 4px; font-weight: bold;">
-                한(漢) - 빨강
-            </span>
-
-        <!-- 관전자일 때 -->
-        <span th:if="${loginMember.id != game.choPlayer.id && (game.hanPlayer == null || loginMember.id != game.hanPlayer.id)}"
-              style="color: white; background-color: #555; padding: 5px 10px; border-radius: 4px; font-weight: bold;">
-                관전자 (Observer)
-            </span>
-
+        <span th:if="${loginMember.id == game.choPlayer.id}" style="color: white; background-color: #2e7d32; padding: 5px 10px; border-radius: 4px; font-weight: bold;">초(楚) - 초록</span>
+        <span th:if="${game.hanPlayer != null && loginMember.id == game.hanPlayer.id}" style="color: white; background-color: #c62828; padding: 5px 10px; border-radius: 4px; font-weight: bold;">한(漢) - 빨강</span>
+        <span th:if="${loginMember.id != game.choPlayer.id && (game.hanPlayer == null || loginMember.id != game.hanPlayer.id)}" style="color: white; background-color: #555; padding: 5px 10px; border-radius: 4px; font-weight: bold;">관전자 (Observer)</span>
         <span style="font-size: 1.1em; color: #333;"> 입니다.</span>
     </div>
+
     <div>
         현재 턴:
         <span class="turn-badge"
@@ -184,20 +184,26 @@
               th:text="${game.currentTurn.name() == 'CHO'} ? '초(楚) - 초록' : '한(漢) - 빨강'">
             </span>
     </div>
+
+    <!-- 점수판 -->
     <div style="margin-top: 10px; font-size: 0.9em; font-weight: bold;">
         <span style="color: var(--cho-color)">초: <span th:text="${choScore}">0.0</span>점</span>
         <span style="margin: 0 10px; color: #ccc;">|</span>
         <span style="color: var(--han-color)">한: <span th:text="${hanScore}">0.0</span>점 (덤 1.5)</span>
     </div>
+
     <div style="margin-top: 5px; color: #666;">
         진행 수: <span th:text="${game.moveCount}">0</span>수
     </div>
 </div>
 
+<!-- 메인 장기판 영역 -->
 <div class="board-container" id="boardContainer">
     <div class="janggi-board">
+
         <div class="palace-overlay palace-top"></div>
         <div class="palace-overlay palace-bottom"></div>
+
         <th:block th:each="y : ${#numbers.sequence(0, 9)}">
             <th:block th:each="x : ${#numbers.sequence(0, 8)}">
                 <div class="cell"
@@ -208,16 +214,29 @@
                                          ${x == 8 ? 'right-edge' : ''}"
                      th:onclick="handleClick([[${x}]], [[${y}]])"
                      th:id="'cell-' + ${x} + '-' + ${y}">
+
                     <div th:if="${piece != null}"
                          class="piece"
-                         th:classappend="${piece.team} + ' ' + ${piece.type}"
-                         th:text="${piece.type.name}">차</div>
+                         th:classappend="${piece.team} + ' ' + ${piece.type}">
+
+                            <span th:switch="${piece.type.name()}">
+                                <span th:case="'GUNG'" th:text="${piece.team.name() == 'CHO' ? '楚' : '漢'}"></span>
+                                <span th:case="'SOLDIER'" th:text="${piece.team.name() == 'CHO' ? '卒' : '兵'}"></span>
+                                <span th:case="'CHA'">車</span>
+                                <span th:case="'PO'">包</span>
+                                <span th:case="'MA'">馬</span>
+                                <span th:case="'SANG'">象</span>
+                                <span th:case="'SA'">士</span>
+                            </span>
+                    </div>
+
                 </div>
             </th:block>
         </th:block>
     </div>
 </div>
 
+<!-- 게임 종료 모달 -->
 <div th:if="${game.status.name() == 'FINISHED'}" class="game-over-overlay">
     <div class="modal-content">
         <h1>🏆 게임 종료! 🏆</h1>
@@ -236,12 +255,13 @@
     <a href="/" style="text-decoration: none; color: #555; border: 1px solid #ccc; padding: 5px 10px; border-radius: 5px; background: white;">🏠 로비로 이동</a>
 </div>
 
+<!-- AJAX 및 이벤트 스크립트 -->
 <script th:inline="javascript">
     const gameId = [[${game.id}]];
     const gameStatus = [[${game.status}]];
     const currentTurn = [[${game.currentTurn}]];
     let currentMoveCount = [[${game.moveCount}]];
-    const isCheck = [[${isCheck}]]; // 서버에서 전달받은 장군 상태
+    const isCheck = [[${isCheck}]];
 
     const myId = [[${loginMember.id}]];
     const choPlayerId = [[${game.choPlayer.id}]];
@@ -251,37 +271,29 @@
     if (myId === choPlayerId) myTeam = "CHO";
     else if (myId === hanPlayerId) myTeam = "HAN";
 
+    // 내 턴이 아니면 흐리게
     if (gameStatus === 'IN_PROGRESS' && myTeam !== 'OBSERVER' && myTeam !== currentTurn) {
         document.getElementById('boardContainer').classList.add('inactive');
     }
 
-    // === [추가] 장군 알림 ===
-    // 페이지 로드 시, 내 턴이고 장군 상태라면 알림
+    // 장군 알림 및 효과
     if (gameStatus === 'IN_PROGRESS' && isCheck) {
-        // 1. 알림창 (선택 사항)
         if (myTeam === currentTurn) {
             setTimeout(() => alert("⚠️ 장군! 왕을 보호하세요!"), 100);
         }
-
-        // 2. [추가] 현재 턴인 쪽의 왕(GUNG)을 찾아서 붉은 효과 주기
-        // DOM이 다 그려진 후 실행하기 위해 setTimeout 사용
         setTimeout(() => {
-            // 현재 턴(CHO or HAN)에 해당하는 왕 기물을 찾음
             const kingPiece = document.querySelector(`.piece.GUNG.${currentTurn}`);
-            if (kingPiece) {
-                kingPiece.classList.add('king-in-check');
-            }
+            if (kingPiece) kingPiece.classList.add('king-in-check');
         }, 100);
     }
 
-    // === AJAX Polling ===
+    // AJAX Polling
     if (gameStatus !== 'FINISHED') {
         setInterval(() => {
             fetch(`/api/games/${gameId}/status`)
                 .then(res => res.json())
                 .then(data => {
                     if (data.moveCount > currentMoveCount || data.status !== gameStatus) {
-                        console.log("상태 변경 감지! 화면 갱신");
                         location.reload();
                     }
                 })
@@ -289,7 +301,6 @@
         }, 1500);
     }
 
-    // === 클릭 및 이동 요청 (AJAX) ===
     let selectedFrom = null;
 
     function toCoordinate(x, y) {
@@ -300,7 +311,6 @@
 
     function handleClick(x, y) {
         if (gameStatus === 'FINISHED') return;
-
         if (myTeam === 'OBSERVER') { alert("관전자 모드입니다."); return; }
         if (myTeam !== currentTurn) { console.log("Not your turn"); return; }
 
@@ -323,8 +333,6 @@
                 selectedFrom = null;
                 return;
             }
-
-            // [수정] AJAX 요청으로 이동
             movePiece(selectedFrom, clickedCoord);
         }
     }
@@ -337,20 +345,21 @@
         })
             .then(async response => {
                 if (response.ok) {
-                    location.reload(); // 성공 시 새로고침
+                    location.reload();
                 } else {
-                    // 에러 응답 처리 (JSON 파싱)
-                    const errData = await response.json();
-                    alert("❌ 이동 불가: " + errData.message); // 에러 메시지 띄우기
-
-                    // 선택 초기화
+                    const text = await response.text();
+                    try {
+                        const errData = JSON.parse(text);
+                        alert("🚫 " + errData.message);
+                    } catch (e) {
+                        alert("❌ 서버 오류가 발생했습니다.");
+                    }
                     document.querySelectorAll('.cell').forEach(el => el.classList.remove('selected'));
                     selectedFrom = null;
                 }
             })
             .catch(err => {
-                console.error(err);
-                alert("서버 통신 오류가 발생했습니다.");
+                alert("서버와 연결할 수 없습니다.");
             });
     }
 </script>
