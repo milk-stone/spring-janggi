@@ -9,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/games")
 @RequiredArgsConstructor
@@ -32,4 +34,8 @@ public class JanggiApiController {
         return ResponseEntity.ok().build();
     }
 
+    @GetMapping("/{id}/movable")
+    public List<String> getMovablePositions(@PathVariable Long id, @RequestParam String from) {
+        return janggiService.getMovablePositions(id, from);
+    }
 }

@@ -133,4 +133,14 @@ public class JanggiService {
         }
         game.join(guest);
     }
+
+    public List<String> getMovablePositions(Long gameId, String fromStr) {
+        Game game = getGame(gameId);
+        Board board = boardMapper.toBoard(game.getBoardState());
+        Position from = new Position(fromStr);
+
+        return board.getMovablePositions(from).stream()
+                .map(Position::toString)
+                .toList();
+    }
 }

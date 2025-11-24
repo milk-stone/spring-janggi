@@ -4,14 +4,15 @@
     <meta charset="UTF-8">
     <title>Spring Boot Janggi</title>
     <style>
-        /* === [변수 정의] 색상 관리 === */
+        /* === [변수 정의] === */
         :root {
             --bg-color: #f4f4f4;
-            --board-bg-color: #e6b87d; /* 장기판 나무색 */
-            --line-color: #5d4037;     /* 선 색상 */
+            --board-bg-color: #e6b87d;
+            --line-color: #5d4037;
             --highlight-color: rgba(255, 215, 0, 0.8);
-            --cho-color: #2e7d32; /* 초나라 (녹색) */
-            --han-color: #c62828; /* 한나라 (적색) */
+            --cho-color: #2e7d32;
+            --han-color: #c62828;
+            --movable-color: rgba(46, 204, 113, 0.8); /* 이동 가능 표시 색상 (초록) */
         }
 
         body {
@@ -39,7 +40,6 @@
         .turn-CHO { background-color: var(--cho-color); }
         .turn-HAN { background-color: var(--han-color); }
 
-        /* === 장기판 컨테이너 === */
         .board-container {
             background-color: var(--board-bg-color);
             padding: 30px;
@@ -58,27 +58,20 @@
             position: relative;
         }
 
-        /* === 개별 칸 (Cell) === */
+        /* === 칸 (Cell) === */
         .cell {
-            position: relative;
-            width: 60px; height: 60px;
-            box-sizing: border-box;
-            display: flex; justify-content: center; align-items: center;
-            cursor: pointer;
-            z-index: 1;
+            position: relative; width: 60px; height: 60px;
+            box-sizing: border-box; display: flex; justify-content: center; align-items: center;
+            cursor: pointer; z-index: 1;
         }
-
-        /* 십자선 그리기 */
         .cell::before { content: ''; position: absolute; top: 50%; left: 0; width: 100%; height: 2px; background-color: var(--line-color); z-index: -1; transform: translateY(-50%); }
         .cell::after { content: ''; position: absolute; top: 0; left: 50%; height: 100%; width: 2px; background-color: var(--line-color); z-index: -1; transform: translateX(-50%); }
 
-        /* 가장자리 선 처리 */
         .cell.top-edge::after { top: 50%; height: 50%; }
         .cell.bottom-edge::after { height: 50%; }
         .cell.left-edge::before { left: 50%; width: 50%; }
         .cell.right-edge::before { width: 50%; }
 
-        /* === 궁성 대각선 오버레이 === */
         .palace-overlay { position: absolute; width: 120px; height: 120px; pointer-events: none; z-index: 0; }
         .palace-top { left: 210px; top: 30px; }
         .palace-bottom { left: 210px; top: 450px; }
@@ -86,8 +79,7 @@
         .palace-overlay::before { transform-origin: 0 0; transform: rotate(45deg); }
         .palace-overlay::after { left: auto; right: 0; transform-origin: 100% 0; transform: rotate(-45deg); }
 
-
-        /* === 기물 (Piece) 디자인 === */
+        /* === 기물 (Piece) === */
         .piece {
             border-radius: 50%;
             display: flex; justify-content: center; align-items: center;
@@ -97,54 +89,49 @@
             box-shadow: 2px 2px 4px rgba(0,0,0,0.3);
             z-index: 10;
             clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%);
-            /* 부드러운 전환 효과 */
             transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-
             font-family: "Gungsuh", "Batang", serif;
-            line-height: 1;
-            padding-bottom: 2px;
+            line-height: 1; padding-bottom: 2px;
         }
 
         .piece.CHO { color: var(--cho-color); border-color: #1b5e20; }
         .piece.HAN { color: var(--han-color); border-color: #b71c1c; }
 
-        /* 기물 크기 차등 적용 */
+        /* 기물 크기 */
         .piece.SOLDIER, .piece.SA { width: 40px; height: 40px; font-size: 20px; }
         .piece.CHA, .piece.PO, .piece.MA, .piece.SANG { width: 48px; height: 48px; font-size: 26px; }
         .piece.GUNG { width: 56px; height: 56px; font-size: 34px; border-width: 3px; }
 
-        /* === [수정] 선택 효과 (강조 강화) === */
+        /* 선택 효과 */
         .cell.selected .piece {
-            /* 1. 크기 확대 및 위로 살짝 띄우기 (들고 있는 느낌) */
             transform: scale(1.2) translateY(-5px);
+            box-shadow: 0 0 0 3px #ffd700, 0 10px 20px rgba(0,0,0,0.4), 0 0 15px 5px rgba(255, 215, 0, 0.6);
+            z-index: 100; background-color: #fffcee; border-color: #b8860b;
+        }
+        .cell.selected::before, .cell.selected::after { background-color: #ffd700; z-index: 2; height: 3px; width: 3px; }
+        .cell.selected { background: radial-gradient(circle, rgba(255, 215, 0, 0.3) 20%, transparent 70%); }
 
-            /* 2. 입체적인 그림자와 발광 효과 */
-            box-shadow:
-                    0 0 0 3px #ffd700, /* 선명한 금색 테두리 */
-                    0 10px 20px rgba(0,0,0,0.4), /* 아래쪽 깊은 그림자 (높이감) */
-                    0 0 15px 5px rgba(255, 215, 0, 0.6); /* 주변 금색 광채 */
-
-            /* 3. 다른 기물 위로 확실히 올라오게 함 */
-            z-index: 100;
-
-            /* 4. 배경색 살짝 밝게 */
-            background-color: #fffcee;
-            border-color: #b8860b; /* 테두리 색상 진하게 */
+        /* === [추가] 이동 가능 위치 표시 (초록색 점) === */
+        .cell.movable { cursor: pointer; }
+        .cell.movable::after {
+            content: ''; position: absolute;
+            top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 18px; height: 18px;
+            background-color: var(--movable-color);
+            border-radius: 50%;
+            z-index: 5; /* 선보다 위, 기물보다 아래 */
+            box-shadow: 0 0 5px var(--movable-color);
+        }
+        /* 적군을 잡을 수 있는 경우 (빨간 테두리 점) */
+        .cell.movable:has(.piece)::after {
+            background-color: transparent;
+            border: 3px solid rgba(231, 76, 60, 0.9); /* 빨간색 */
+            width: 45px; height: 45px;
+            z-index: 20; /* 기물 위로 표시 */
+            box-shadow: 0 0 10px rgba(231, 76, 60, 0.6);
         }
 
-        /* 선택된 칸 바닥 십자선 강조 */
-        .cell.selected::before, .cell.selected::after {
-            background-color: #ffd700; /* 금색 */
-            z-index: 2;
-            height: 3px; width: 3px; /* 선을 점처럼 보이게 하거나 그대로 유지 */
-        }
-        /* 선택된 빈 칸(이동 가능 위치) 표시용 */
-        .cell.selected {
-            /* 은은한 금색 원형 그라데이션 */
-            background: radial-gradient(circle, rgba(255, 215, 0, 0.3) 20%, transparent 70%);
-        }
-
-        /* 위기에 처한 왕 (장군) 시각 효과 */
+        /* 장군 효과 */
         .piece.king-in-check {
             box-shadow: 0 0 15px 5px rgba(255, 0, 0, 0.8);
             animation: pulse 1s infinite alternate;
@@ -168,7 +155,6 @@
 <h1>♟️ Spring Boot 장기</h1>
 
 <div class="game-info">
-    <!-- 플레이어 정보 배지 -->
     <div style="margin-bottom: 15px; padding: 10px; background-color: #f9f9f9; border-radius: 5px; border: 1px solid #ddd;">
         <span style="font-size: 1.1em; color: #333;">당신은 </span>
         <span th:if="${loginMember.id == game.choPlayer.id}" style="color: white; background-color: #2e7d32; padding: 5px 10px; border-radius: 4px; font-weight: bold;">초(楚) - 초록</span>
@@ -185,7 +171,6 @@
             </span>
     </div>
 
-    <!-- 점수판 -->
     <div style="margin-top: 10px; font-size: 0.9em; font-weight: bold;">
         <span style="color: var(--cho-color)">초: <span th:text="${choScore}">0.0</span>점</span>
         <span style="margin: 0 10px; color: #ccc;">|</span>
@@ -197,10 +182,8 @@
     </div>
 </div>
 
-<!-- 메인 장기판 영역 -->
 <div class="board-container" id="boardContainer">
     <div class="janggi-board">
-
         <div class="palace-overlay palace-top"></div>
         <div class="palace-overlay palace-bottom"></div>
 
@@ -218,7 +201,6 @@
                     <div th:if="${piece != null}"
                          class="piece"
                          th:classappend="${piece.team} + ' ' + ${piece.type}">
-
                             <span th:switch="${piece.type.name()}">
                                 <span th:case="'GUNG'" th:text="${piece.team.name() == 'CHO' ? '楚' : '漢'}"></span>
                                 <span th:case="'SOLDIER'" th:text="${piece.team.name() == 'CHO' ? '卒' : '兵'}"></span>
@@ -236,7 +218,6 @@
     </div>
 </div>
 
-<!-- 게임 종료 모달 -->
 <div th:if="${game.status.name() == 'FINISHED'}" class="game-over-overlay">
     <div class="modal-content">
         <h1>🏆 게임 종료! 🏆</h1>
@@ -255,7 +236,6 @@
     <a href="/" style="text-decoration: none; color: #555; border: 1px solid #ccc; padding: 5px 10px; border-radius: 5px; background: white;">🏠 로비로 이동</a>
 </div>
 
-<!-- AJAX 및 이벤트 스크립트 -->
 <script th:inline="javascript">
     const gameId = [[${game.id}]];
     const gameStatus = [[${game.status}]];
@@ -271,12 +251,10 @@
     if (myId === choPlayerId) myTeam = "CHO";
     else if (myId === hanPlayerId) myTeam = "HAN";
 
-    // 내 턴이 아니면 흐리게
     if (gameStatus === 'IN_PROGRESS' && myTeam !== 'OBSERVER' && myTeam !== currentTurn) {
         document.getElementById('boardContainer').classList.add('inactive');
     }
 
-    // 장군 알림 및 효과
     if (gameStatus === 'IN_PROGRESS' && isCheck) {
         if (myTeam === currentTurn) {
             setTimeout(() => alert("⚠️ 장군! 왕을 보호하세요!"), 100);
@@ -287,7 +265,6 @@
         }, 100);
     }
 
-    // AJAX Polling
     if (gameStatus !== 'FINISHED') {
         setInterval(() => {
             fetch(`/api/games/${gameId}/status`)
@@ -302,6 +279,32 @@
     }
 
     let selectedFrom = null;
+
+    // === [추가] 마커 초기화 함수 ===
+    function clearMovables() {
+        document.querySelectorAll('.cell.movable').forEach(el => el.classList.remove('movable'));
+    }
+
+    // === [추가] 이동 가능 위치 API 호출 및 표시 ===
+    function showMovablePositions(from) {
+        fetch(`/api/games/${gameId}/movable?from=${from}`)
+            .then(res => res.json())
+            .then(positions => {
+                positions.forEach(posStr => {
+                    const colChar = posStr.charAt(0);
+                    const rowStr = posStr.substring(1);
+                    const x = colChar.charCodeAt(0) - 65;
+                    const y = parseInt(rowStr) - 1;
+
+                    const cellId = `cell-${x}-${y}`;
+                    const cell = document.getElementById(cellId);
+                    if (cell) {
+                        cell.classList.add('movable');
+                    }
+                });
+            })
+            .catch(err => console.error("이동 경로 조회 실패", err));
+    }
 
     function toCoordinate(x, y) {
         const col = String.fromCharCode(65 + x);
@@ -327,13 +330,19 @@
             }
             selectedFrom = clickedCoord;
             cellElement.classList.add('selected');
+
+            // [추가] 이동 가능 위치 표시
+            showMovablePositions(clickedCoord);
+
         } else {
             if (selectedFrom === clickedCoord) {
                 document.querySelectorAll('.cell').forEach(el => el.classList.remove('selected'));
+                clearMovables(); // [추가] 취소 시 마커 제거
                 selectedFrom = null;
                 return;
             }
             movePiece(selectedFrom, clickedCoord);
+            clearMovables(); // [추가] 이동 요청 후 마커 제거
         }
     }
 
