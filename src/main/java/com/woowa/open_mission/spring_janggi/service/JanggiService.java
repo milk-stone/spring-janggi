@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -35,11 +36,12 @@ public class JanggiService {
      * 말 이동 (핵심 로직)
      */
     @Transactional
-    public void movePiece(Long gameId, String fromStr, String toStr) {
+    public void movePiece(Long gameId, String fromStr, String toStr, Member loginMember) {
         Game game = getGame(gameId);
 
-        Board board = boardMapper.toBoard(game.getBoardState());
+        validatePlayerTurn(game, loginMember);
 
+        Board board = boardMapper.toBoard(game.getBoardState());
         Position from = new Position(fromStr);
         Position to = new Position(toStr);
 
@@ -48,13 +50,16 @@ public class JanggiService {
             throw new BusinessException(ErrorCode.PIECE_NOT_FOUND);
         }
 
+        if (movingPiece.getTeam() != game.getCurrentTurn()) {
+            throw new BusinessException(ErrorCode.IS_NOT_YOUR_TURN);
+        }
+
         Piece targetPiece = board.getPiece(to);
         String capturedPieceStr = (targetPiece != null) ? targetPiece.getType().name() : null;
 
         board.move(game.getCurrentTurn(), from, to);
 
         String newBoardState = boardMapper.toJson(board);
-
         Team currentTurn = game.getCurrentTurn();
         Team nextTurn = currentTurn.opposite();
 
@@ -74,6 +79,22 @@ public class JanggiService {
                 capturedPieceStr
         );
         moveHistoryRepository.save(history);
+    }
+
+    private void validatePlayerTurn(Game game, Member player) {
+        Long playerId = player.getId();
+
+        Long currentTurnPlayerId;
+        if (game.getCurrentTurn() == Team.CHO) {
+            currentTurnPlayerId = game.getChoPlayer().getId();
+        } else {
+            if (game.getHanPlayer() == null) throw new BusinessException(ErrorCode.GAME_DATA_ERROR);
+            currentTurnPlayerId = game.getHanPlayer().getId();
+        }
+
+        if (!Objects.equals(playerId, currentTurnPlayerId)) {
+            throw new BusinessException(ErrorCode.IS_NOT_YOUR_TURN);
+        }
     }
 
     @Transactional
