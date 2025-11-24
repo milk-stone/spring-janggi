@@ -31,8 +31,11 @@ public enum ErrorCode {
     CANNOT_CAPTURE_SAME_TEAM(HttpStatus.BAD_REQUEST, "BE_004", "아군은 잡을 수 없습니다."),
     INVALID_MOVE_RULE(HttpStatus.BAD_REQUEST, "BE_005", "해당 기물의 이동 규칙에 어긋납니다."),
     KING_IS_IN_DANGER(HttpStatus.BAD_REQUEST, "BE_006", "왕이 위험합니다. 장군을 막아야 합니다!"),
-    GAME_DATA_ERROR(HttpStatus.BAD_REQUEST, "BE_007", "게임 데이터 에러입니다.");
+    GAME_DATA_ERROR(HttpStatus.BAD_REQUEST, "BE_007", "게임 데이터 에러입니다."),
+    // * System
+    JSON_CONVERSION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "SYS_001", "Json으로 변환 도중 혹은 Json을 변환하는 도중 문제가 발생했습니다.");
+
     private final HttpStatus status;
     private final String code;
     private final String message;
-}
+    }
