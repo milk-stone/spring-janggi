@@ -296,23 +296,15 @@ public class Board {
             return false;
         }
 
-        switch (piece.getType()) {
-            case CHA:
-                return validateCha(from, to);
-            case SOLDIER:
-                return validateSoldier(piece.getTeam(), from, to);
-            case PO:
-                return validatePo(from, to);
-            case MA:
-                return validateMa(from, to);
-            case SANG:
-                return validateSang(from, to);
-            case GUNG:
-            case SA:
-                return validateGungSa(from, to);
-            default:
-                return false;
-        }
+        return switch (piece.getType()) {
+            case CHA -> validateCha(from, to);
+            case SOLDIER -> validateSoldier(piece.getTeam(), from, to);
+            case PO -> validatePo(from, to);
+            case MA -> validateMa(from, to);
+            case SANG -> validateSang(from, to);
+            case GUNG, SA -> validateGungSa(from, to);
+            default -> false;
+        };
     }
 
     // 기물 설명 [차] : 직선 이동(궁성 내 대각 이동도 가능), 경로에 장애물 없어야 함

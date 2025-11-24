@@ -18,7 +18,7 @@ public class LobbyController {
 
     private final JanggiService janggiService;
 
-    // 로비 (로그인 체크)
+    // 로비
     @GetMapping("/")
     public String lobby(HttpServletRequest request, Model model) {
         HttpSession session = request.getSession(false);

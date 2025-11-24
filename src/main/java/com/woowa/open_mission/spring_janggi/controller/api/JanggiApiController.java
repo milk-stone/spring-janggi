@@ -18,14 +18,14 @@ public class JanggiApiController {
 
     private final JanggiService janggiService;
 
-    // 상태 조회 (폴링용)
+    // 상태 조회
     @GetMapping("/{id}/status")
     public GameStatusResponse getGameStatus(@PathVariable Long id) {
         Game game = janggiService.getGame(id);
         return new GameStatusResponse(game.getMoveCount(), game.getCurrentTurn(), game.getStatus());
     }
 
-    // [이동 API] 성공 시 200 OK, 실패 시 예외 발생 -> ApiExceptionHandler가 처리
+    // [이동 API] 성공 시 200 OK, 실패 시 예외 발생
     @PostMapping("/{id}/move")
     public ResponseEntity<Void> movePiece(@PathVariable Long id,
                                           @RequestBody MoveRequest request,

@@ -5,9 +5,6 @@ import com.woowa.open_mission.spring_janggi.global.exception.ErrorCode;
 
 import java.util.Objects;
 
-/**
- * 장기 알(기물) 하나를 나타내는 불변 객체
- */
 public final class Piece {
 
     private final Team team;

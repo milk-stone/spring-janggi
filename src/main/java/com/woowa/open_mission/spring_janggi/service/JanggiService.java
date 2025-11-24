@@ -25,17 +25,11 @@ public class JanggiService {
     private final MoveHistoryRepository moveHistoryRepository;
     private final BoardMapper boardMapper;
 
-    /**
-     * 게임 조회 (화면 렌더링용)
-     */
     public Game getGame(Long gameId) {
         return gameRepository.findById(gameId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.GAME_NOT_FOUND));
     }
 
-    /**
-     * 말 이동 (핵심 로직)
-     */
     @Transactional
     public void movePiece(Long gameId, String fromStr, String toStr, Member loginMember) {
         Game game = getGame(gameId);
@@ -73,7 +67,7 @@ public class JanggiService {
 
         MoveHistory history = MoveHistory.recordMove(
                 game,
-                game.getMoveCount(), // 이미 updateMove에서 1 증가됨
+                game.getMoveCount(),
                 movingPiece.getType().name(),
                 fromStr,
                 toStr,
@@ -108,12 +102,10 @@ public class JanggiService {
         return savedGame.getId();
     }
 
-    // [추가] 게임 목록 조회
     public List<Game> findAllGames() {
-        return gameRepository.findAll(); // 실제론 페이징 필요
+        return gameRepository.findAll();
     }
 
-    // [추가] 방 만들기
     @Transactional
     public Long createRoom(String title, Member host) {
         Board initialBoard = new Board();
@@ -124,11 +116,10 @@ public class JanggiService {
         return game.getId();
     }
 
-    // [추가] 방 참가하기
     @Transactional
     public void joinRoom(Long gameId, Member guest) {
         Game game = getGame(gameId);
-        // (옵션) 방장이 자기 방에 참가하려는 경우 차단
+        // 방장이 자기 방에 참가하려는 경우 차단
         if (game.getChoPlayer().getId().equals(guest.getId())) {
             return;
         }

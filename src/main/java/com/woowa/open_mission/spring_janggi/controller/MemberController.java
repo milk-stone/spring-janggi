@@ -26,11 +26,10 @@ public class MemberController {
                         HttpServletRequest request) {
         Member member = memberService.login(email, password);
 
-        // 세션에 회원 정보 저장
         HttpSession session = request.getSession();
         session.setAttribute("loginMember", member);
 
-        return "redirect:/"; // 로비로 이동
+        return "redirect:/";
     }
 
     @PostMapping("/signup")
