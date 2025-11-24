@@ -2,6 +2,7 @@ package com.woowa.open_mission.spring_janggi.controller;
 
 import com.woowa.open_mission.spring_janggi.controller.dto.MoveRequest;
 import com.woowa.open_mission.spring_janggi.domain.core.Board;
+import com.woowa.open_mission.spring_janggi.domain.core.Team;
 import com.woowa.open_mission.spring_janggi.domain.entity.Game;
 import com.woowa.open_mission.spring_janggi.service.BoardMapper;
 import com.woowa.open_mission.spring_janggi.service.JanggiService;
@@ -28,6 +29,8 @@ public class JanggiController {
         model.addAttribute("game", game);
         model.addAttribute("board", board);
 
+        model.addAttribute("choScore", board.calculateScore(Team.CHO));
+        model.addAttribute("hanScore", board.calculateScore(Team.HAN));
         return "game";
     }
 

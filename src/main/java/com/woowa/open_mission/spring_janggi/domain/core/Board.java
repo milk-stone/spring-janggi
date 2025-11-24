@@ -611,6 +611,22 @@ public class Board {
         return true;
     }
 
+    public double calculateScore(Team team) {
+        double score = 0.0;
+
+        if (team == Team.HAN) {
+            score += 1.5;
+        }
+
+        for (Piece piece : pieceMap.values()) {
+            if (piece.getTeam() == team) {
+                score += piece.getScore();
+            }
+        }
+
+        return score;
+    }
+
     public Map<Position, Piece> getPieceMap() {
         return new HashMap<>(pieceMap);
     }
