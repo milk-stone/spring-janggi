@@ -14,6 +14,8 @@ public enum ErrorCode {
     INVALID_EMAIL(HttpStatus.BAD_REQUEST, "ME_001", "이메일로 유효하지 않은 값이 입력되었습니다."),
     INVALID_PASSWORD(HttpStatus.BAD_REQUEST, "ME_002", "비밀번호로 유효하지 않은 값이 입력되었습니다."),
     INVALID_NICKNAME(HttpStatus.BAD_REQUEST, "ME_003", "닉네임으로 유효하지 않은 값이 입력되었습니다."),
+    DUPLICATE_EMAIL(HttpStatus.BAD_REQUEST, "ME_004", "이미 존재하는 이메일입니다."),
+    LOGIN_FAILED(HttpStatus.BAD_REQUEST, "ME_005", "이메일 혹은 비밀번호가 일치하지 않습니다."),
     // * Game
     INVALID_GAME_STATUS(HttpStatus.BAD_REQUEST, "GE_001", "게임이 진행 중인 상태가 아닙니다."),
     GAME_NOT_FOUND(HttpStatus.NOT_FOUND, "GE_002", "해당 게임이 존재하지 않습니다."),

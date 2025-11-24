@@ -4,9 +4,11 @@ import com.woowa.open_mission.spring_janggi.global.exception.BusinessException;
 import com.woowa.open_mission.spring_janggi.global.exception.ErrorCode;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
+@Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Member {
     @Id
@@ -31,7 +33,7 @@ public class Member {
         if (email == null || email.isBlank()) {
             throw new BusinessException(ErrorCode.BLANK_INPUT);
         }
-        if (email.contains("@")) {
+        if (!email.contains("@")) {
             throw new BusinessException(ErrorCode.INVALID_EMAIL);
         }
     }
