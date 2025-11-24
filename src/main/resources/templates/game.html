@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Spring Boot Janggi</title>
+    <style>
+        /* === [변수 정의] 색상 관리 === */
+        :root {
+            --bg-color: #f4f4f4;
+            --board-bg-color: #e6b87d; /* 장기판 나무색 */
+            --line-color: #5d4037;     /* 선 색상 */
+            --highlight-color: rgba(255, 215, 0, 0.8);
+            --cho-color: #2e7d32;
+            --han-color: #c62828;
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 { margin-bottom: 10px; }
+
+        .game-info {
+            margin-bottom: 20px;
+            padding: 10px 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .turn-badge {
+            font-weight: bold; padding: 5px 10px; border-radius: 4px; color: white;
+        }
+        .turn-CHO { background-color: var(--cho-color); }
+        .turn-HAN { background-color: var(--han-color); }
+
+        /* === 장기판 컨테이너 === */
+        .board-container {
+            background-color: var(--board-bg-color);
+            padding: 30px; /* 테두리 여백 확보 */
+            border-radius: 5px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+            user-select: none;
+            /* 실제 나무 판 느낌을 위한 이중 테두리 */
+            border: 5px solid #8d6e63;
+            position: relative; /* 모달 위치 기준 */
+        }
+
+        .janggi-board {
+            display: grid;
+            grid-template-columns: repeat(9, 60px);
+            grid-template-rows: repeat(10, 60px);
+            position: relative;
+        }
+
+        /* === [핵심] 개별 칸 (교차점) === */
+        .cell {
+            position: relative;
+            width: 60px; height: 60px;
+            box-sizing: border-box;
+            display: flex; justify-content: center; align-items: center;
+            cursor: pointer;
+            z-index: 1;
+        }
+
+        /* 십자선 그리기 */
+        .cell::before { /* 가로선 */
+            content: ''; position: absolute;
+            top: 50%; left: 0; width: 100%; height: 2px;
+            background-color: var(--line-color);
+            z-index: -1;
+            transform: translateY(-50%);
+        }
+        .cell::after { /* 세로선 */
+            content: ''; position: absolute;
+            top: 0; left: 50%; height: 100%; width: 2px;
+            background-color: var(--line-color);
+            z-index: -1;
+            transform: translateX(-50%);
+        }
+
+        /* === [핵심] 가장자리 처리 (선 절반 자르기) === */
+        .cell.top-edge::after { top: 50%; height: 50%; }
+        .cell.bottom-edge::after { height: 50%; }
+        .cell.left-edge::before { left: 50%; width: 50%; }
+        .cell.right-edge::before { width: 50%; }
+
+
+        /* === 궁성 대각선 오버레이 === */
+        .palace-overlay {
+            position: absolute;
+            width: 120px;  /* 2칸 너비 */
+            height: 120px; /* 2칸 높이 */
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .palace-top { left: 210px; top: 30px; }
+        .palace-bottom { left: 210px; top: 450px; }
+
+        .palace-overlay::before,
+        .palace-overlay::after {
+            content: ''; position: absolute;
+            background-color: var(--line-color);
+            width: 170px; height: 2px;
+            top: 0; left: 0;
+        }
+
+        .palace-overlay::before { transform-origin: 0 0; transform: rotate(45deg); }
+        .palace-overlay::after { left: auto; right: 0; transform-origin: 100% 0; transform: rotate(-45deg); }
+
+
+        /* === 기물 (Piece) === */
+        .piece {
+            width: 52px; height: 52px;
+            border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 26px; font-weight: bold;
+            background-color: #fdf5e6;
+            border: 2px solid #8d6e63;
+            box-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            z-index: 10;
+            clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%);
+            transition: transform 0.1s ease;
+        }
+
+        .cell.selected .piece {
+            box-shadow: 0 0 0 4px var(--highlight-color), 2px 2px 4px rgba(0,0,0,0.3);
+            transform: scale(1.1);
+        }
+        .cell.selected::before, .cell.selected::after {
+            background-color: var(--highlight-color);
+            z-index: 2;
+        }
+        .cell.selected {
+            background: radial-gradient(circle, var(--highlight-color) 10%, transparent 11%);
+        }
+
+        .piece.CHO { color: var(--cho-color); border-color: #1b5e20; }
+        .piece.HAN { color: var(--han-color); border-color: #b71c1c; }
+        .piece.SOLDIER { font-size: 22px; width: 44px; height: 44px; }
+        .piece.GUNG { font-size: 32px; width: 56px; height: 56px; border-width: 3px; }
+
+        /* === [추가] 게임 종료 오버레이 (Modal) === */
+        .game-over-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 100;
+            animation: fadeIn 0.5s;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 30px 50px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            border: 5px solid #e6b87d;
+        }
+
+        .winner-text {
+            font-size: 2em; font-weight: bold; margin: 20px 0; color: #333;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+<h1>♟️ Spring Boot 장기</h1>
+
+<div class="game-info">
+    <div>
+        현재 턴:
+        <span class="turn-badge"
+              th:classappend="${game.currentTurn.name() == 'CHO'} ? 'turn-CHO' : 'turn-HAN'"
+              th:text="${game.currentTurn.name() == 'CHO'} ? '초(楚) - 초록' : '한(漢) - 빨강'">
+            </span>
+    </div>
+    <div style="margin-top: 5px; color: #666;">
+        진행 수: <span th:text="${game.moveCount}">0</span>수
+    </div>
+</div>
+
+<!-- 메인 장기판 영역 -->
+<div class="board-container">
+    <div class="janggi-board">
+
+        <!-- 궁성 대각선 (격자 위에 덧그리기) -->
+        <div class="palace-overlay palace-top"></div>
+        <div class="palace-overlay palace-bottom"></div>
+
+        <!-- 격자 생성 -->
+        <th:block th:each="y : ${#numbers.sequence(0, 9)}">
+            <th:block th:each="x : ${#numbers.sequence(0, 8)}">
+                <div class="cell"
+                     th:with="piece=${board.getPiece(x, y)}"
+                     th:classappend="${y == 0 ? 'top-edge' : ''} + ' ' +
+                                         ${y == 9 ? 'bottom-edge' : ''} + ' ' +
+                                         ${x == 0 ? 'left-edge' : ''} + ' ' +
+                                         ${x == 8 ? 'right-edge' : ''}"
+                     th:onclick="handleClick([[${x}]], [[${y}]])"
+                     th:id="'cell-' + ${x} + '-' + ${y}">
+
+                    <div th:if="${piece != null}"
+                         class="piece"
+                         th:classappend="${piece.team} + ' ' + ${piece.type}"
+                         th:text="${piece.type.name}">
+                        차
+                    </div>
+
+                </div>
+            </th:block>
+        </th:block>
+    </div>
+</div>
+
+<!-- [추가] 게임 종료 알림 모달 (게임 상태가 FINISHED일 때만 표시) -->
+<div th:if="${game.status.name() == 'FINISHED'}" class="game-over-overlay">
+    <div class="modal-content">
+        <h1>🏆 게임 종료! 🏆</h1>
+        <div class="winner-text">
+            <!-- 승리 팀 설명 출력 -->
+            <span th:text="${game.winner.description}"></span>
+        </div>
+        <p th:text="'총 ' + ${game.moveCount} + '수 만에 승부가 났습니다.'"></p>
+        <div style="margin-top: 20px;">
+            <a href="/games/new" style="text-decoration: none; color: white; background-color: #2e7d32; padding: 10px 20px; border-radius: 5px; font-weight: bold;">
+                다시 한 판 하기
+            </a>
+        </div>
+    </div>
+</div>
+
+<div style="margin-top: 20px;">
+    <a href="/games/new" style="text-decoration: none; color: #555; border: 1px solid #ccc; padding: 5px 10px; border-radius: 5px; background: white;">🔄 새 게임 시작</a>
+</div>
+
+<form id="moveForm" method="post" th:action="@{/games/{id}/move(id=${game.id})}">
+    <input type="hidden" name="from" id="inputFrom">
+    <input type="hidden" name="to" id="inputTo">
+</form>
+
+<script>
+    let selectedFrom = null;
+
+    function toCoordinate(x, y) {
+        const col = String.fromCharCode(65 + x);
+        const row = y + 1;
+        return col + row;
+    }
+
+    function handleClick(x, y) {
+        // [추가] 게임이 종료되었으면 클릭 무시 (Thymeleaf 값을 JS 변수로 주입)
+        const status = "[[${game.status}]]";
+        if (status === 'FINISHED') {
+            return;
+        }
+
+        const clickedCoord = toCoordinate(x, y);
+        const cellId = 'cell-' + x + '-' + y;
+        const cellElement = document.getElementById(cellId);
+
+        if (selectedFrom === null) {
+            if (cellElement.children.length === 0) return; // 기물 없으면 무시
+
+            selectedFrom = clickedCoord;
+            cellElement.classList.add('selected');
+        } else {
+            if (selectedFrom === clickedCoord) {
+                document.querySelectorAll('.cell').forEach(el => el.classList.remove('selected'));
+                selectedFrom = null;
+                return;
+            }
+            document.getElementById('inputFrom').value = selectedFrom;
+            document.getElementById('inputTo').value = clickedCoord;
+            document.getElementById('moveForm').submit();
+        }
+    }
+</script>
+</body>
+</html>
