@@ -59,60 +59,74 @@
 
 ### 2. 핵심 도메인 로직 (`domain.core`)
 
-- [ ] `Position.java` (좌표 `A1`, `B2` 등을 표현하는 객체)
-- [ ] `PieceType.java` (차, 포, 마, 상 등 말의 종류 Enum)
-- [ ] `Team.java` (초, 한 Enum)
-- [ ] `Piece.java` (말 객체, `PieceType`과 `Team` 보유)
-- [ ] `Board.java` (게임판 로직)
-    - [ ] 2차원 배열 또는 `Map`으로 말의 배치 관리
-    - [ ] `move(from, to)`: 말 이동 메서드
-    - [ ] `calculateMovablePositions(position)`: 특정 말의 이동 가능 위치 계산
-    - [ ] `isCheckmate(team)`: 외통수(체크메이트) 판단 로직
-    - [ ] `isCheck(team)`: '장군' 판단 로직
-- [ ] `Board` 상태를 `JSON`으로 직렬화/역직렬화하는 유틸리티 작성
+- [x] `Position.java` (좌표 `A1`, `B2` 등을 표현하는 객체)
+- [x] `PieceType.java` (차, 포, 마, 상 등 말의 종류 Enum)
+- [x] `Team.java` (초, 한 Enum)
+- [x] `Piece.java` (말 객체, `PieceType`과 `Team` 보유)
+- [x] `Board.java` (게임판 로직)
+    - [x] 2차원 배열 또는 `Map`으로 말의 배치 관리
+    - [x] `move(from, to)`: 말 이동 메서드
+    - [x] `calculateMovablePositions(position)`: 특정 말의 이동 가능 위치 계산
+    - [x] `isCheckmate(team)`: 외통수(체크메이트) 판단 로직
+    - [x] `isCheck(team)`: '장군' 판단 로직
+- [x] `BoardMapper.java` : `Board` 상태를 `JSON`으로 직렬화/역직렬화하는 유틸리티 작성
 
 ### 3. 엔티티 및 리포지토리 (`domain.entity`, `domain.repository`)
 
 - [x] `Member` 엔티티 작성
     - [x] `validate()` 메서드를 통한 유효성 검증 로직 추가
-- [ ] `Game` 엔티티 작성
-    - [ ] `boardState` (TEXT/JSON): 현재 게임판 상태 스냅샷
-    - [ ] `currentTurn` (Enum: CHO, HAN)
-    - [ ] `status` (Enum: WAITING, IN_PROGRESS, FINISHED)
-- [ ] `MoveHistory` 엔티티 작성 (기보 저장)
-- [ ] `MemberRepository` 인터페이스 작성
-- [ ] `GameRepository` 인터페이스 작성
-- [ ] `MoveHistoryRepository` 인터페이스 작성
+- [x] `Game` 엔티티 작성
+    - [x] `boardState` (TEXT/JSON): 현재 게임판 상태 스냅샷
+    - [x] `currentTurn` (Enum: CHO, HAN)
+    - [x] `status` (Enum: WAITING, IN_PROGRESS, FINISHED)
+- [x] `MoveHistory` 엔티티 작성 (기보 저장)
+- [x] `MemberRepository` 인터페이스 작성
+- [x] `GameRepository` 인터페이스 작성
+- [x] `MoveHistoryRepository` 인터페이스 작성
 
-### 4. 서비스 및 SSR 웹 구현 (`service`, `controller`)
+### 4. 핵심 게임 엔진 및 웹 서비스 구현 (`Core Logic`, `Basic Web`)
 
-- [ ] `JanggiService` 작성
-    - [ ] `createGame()`: 새 게임 생성
-    - [ ] `loadGame(gameId)`: DB에서 `Game`을 로드하고 `Board` 객체로 변환
-    - [ ] `movePiece(gameId, from, to)`:
-        - [ ] `Game` 로드 및 `Board` 객체 생성
-        - [ ] `Board` 로직으로 이동 유효성 검사
-        - [ ] `Board.move()` 실행
-        - [ ] `Board` 상태를 `Game` 엔티티(`boardState`)에 업데이트 (JSON)
-        - [ ] `MoveHistory`에 이동 기록 `save()`
-- [ ] `JanggiController` 작성
-    - [ ] `GET /game/{gameId}`: 게임 방 뷰 렌더링 (Thymeleaf)
-    - [ ] `POST /game/{gameId}/move`: 말 이동 요청 처리
-        - [ ] `JanggiService.movePiece()` 호출
-        - [ ] 처리 후 `redirect:/game/{gameId}` (페이지 새로고침)
-- [ ] Thymeleaf 뷰 템플릿 작성
-    - [ ] `game.html`
-    - [ ] `Board` 객체를 받아 장기판을 `<table>` 등으로 동적 렌더링
-    - [ ] 말 이동을 위한 간단한 폼(Form) 또는 링크(GET) 구현
+- [x] **장기 도메인 로직 구현 (Domain)**
+    - [x] **게임 상태 관리**: `Board` 객체를 통한 기물 배치 및 상태 관리, JSON 직렬화를 통한 DB 저장/복원.
+    - [x] **이동 유효성 검증 (Move Validation)**:
+        - 기물별 행마법 완벽 구현 (마/상의 멱, 포의 다리 조건, 궁성 라인 이동 등).
+        - **장군(Check)** 감지 및 **자살수(Suicide Move)** 방지 알고리즘 적용.
+        - **외통수(Checkmate)** 판단 및 게임 종료 처리.
+    - [x] **기보 관리**: 이동 경로(`MoveHistory`) 저장 및 턴(`Turn`) 관리.
 
-### 5. 사용자 및 1:1 대결 (고도화)
+- [x] **웹 요청 처리 및 뷰 (Controller, View)**
+    - [x] **SSR 기반 렌더링**: Thymeleaf를 활용한 초기 장기판 및 게임 정보(점수, 턴) 렌더링.
+    - [x] **API 기반 이동 처리**:
+        - `REST API`를 통해 기물 이동 요청을 비동기적으로 처리.
+        - 이동 실패 시 예외 메시지를 JSON으로 응답하여 `Alert` 처리.
+    - [x] **CSS Grid 장기판**: `div`와 `CSS Grid`를 활용하여 반응형 장기판 및 궁성 대각선 구현.
 
-- [ ] (TBD) 회원 가입 및 로그인 기능
-- [ ] (TBD) `Game` 엔티티에 `choPlayer`, `hanPlayer` (Member) 매핑
-- [ ] (TBD) 대기방 및 1:1 매칭 로직 구현
+### 5. 사용자 시스템 및 멀티플레이 고도화 (`User`, `Multiplayer`, `Advanced UX`)
 
-### 6. 실시간성 개선 (고도화)
+- [x] **사용자 인증 시스템 (User Auth)**
+    - [x] **회원 관리**: 이메일/비밀번호 기반의 회원가입 및 중복 검증 로직.
+    - [x] **세션 로그인**: `HttpSession`을 활용한 로그인 상태 유지 및 사용자 식별.
 
+- [x] **로비 및 매칭 시스템 (Lobby)**
+    - [x] **대기실(Lobby)**: 생성된 게임 방 목록 조회 및 입장 가능한 방 표시.
+    - [x] **방 만들기/참가**: 로그인한 사용자가 방장(Host)이 되어 방을 생성하거나, 도전자(Guest)로 참가.
+    - [x] **플레이어 매칭**: `Game` 엔티티와 `Member` 엔티티를 연동하여 초(Cho)/한(Han) 플레이어 배정.
+
+- [x] **게임 수행 시 권한 검증**
+    - [x] **턴 & 소유권 검증**: 현재 턴의 플레이어인지, 본인의 기물을 조작하는지 서버 측 검증 강화.
+    - [x] **관전자 모드**: 게임에 참가하지 않은 사용자는 기물 조작을 차단하고 관전만 가능하도록 처리.
+
+- [x] **실시간성 및 UX 고도화 (Real-time & UX)**
+    - [x] **실시간 동기화 (Polling)**: `AJAX Polling` 기법을 도입하여 상대방의 수를 실시간으로 화면에 반영.
+    - [x] **시각적 피드백 강화**:
+        - **이동 가이드(Guide)**: 기물 선택 시 이동 가능한 위치를 마커(Dot)로 표시.
+        - **장군 알림(Effect)**: 장군 상태 시 왕(Gung) 기물에 붉은 점멸 애니메이션 및 경고창 출력.
+        - **기물 디자인**: 텍스트 대신 한자(漢字) 적용 및 계급별 크기 차등화로 리얼리티 향상.
+
+### 6. 추가 고도화
+
+- [ ] 기보 확인 기능
+- [ ] 시스템의 안정성을 보장하는 단위 테스트 코드 작성
 ---
 
 ## 5. 프로젝트 사용 메뉴얼
