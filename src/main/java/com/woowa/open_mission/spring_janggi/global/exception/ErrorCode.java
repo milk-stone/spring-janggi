@@ -2,6 +2,7 @@ package com.woowa.open_mission.spring_janggi.global.exception;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.graphql.GraphQlProperties;
 import org.springframework.http.HttpStatus;
 
 @RequiredArgsConstructor
@@ -28,7 +29,9 @@ public enum ErrorCode {
     IS_NOT_YOUR_TURN(HttpStatus.BAD_REQUEST, "BE_002", "자신의 기물만 움직일 수 있습니다."),
     CANNOT_MOVE_TO_SAME_POSITION(HttpStatus.BAD_REQUEST, "BE_003", "제자리로 이동할 수 없습니다."),
     CANNOT_CAPTURE_SAME_TEAM(HttpStatus.BAD_REQUEST, "BE_004", "아군은 잡을 수 없습니다."),
-    INVALID_MOVE_RULE(HttpStatus.BAD_REQUEST, "BE_005", "해당 기물의 이동 규칙에 어긋납니다.");
+    INVALID_MOVE_RULE(HttpStatus.BAD_REQUEST, "BE_005", "해당 기물의 이동 규칙에 어긋납니다."),
+    KING_IS_IN_DANGER(HttpStatus.BAD_REQUEST, "BE_006", "왕이 위험합니다. 장군을 막아야 합니다!"),
+    GAME_DATA_ERROR(HttpStatus.BAD_REQUEST, "BE_007", "게임 데이터 에러입니다.");
     private final HttpStatus status;
     private final String code;
     private final String message;

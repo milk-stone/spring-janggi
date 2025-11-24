@@ -110,13 +110,14 @@ public class Board {
                         if (!Position.isValid(nx, ny)) continue;
                         if (!isInPalace(nx, ny)) continue;
 
+                        Position pos = new Position(nx, ny);
                         if (Math.abs(dx) == 1 && Math.abs(dy) == 1) {
-                            if (!isPalaceDiagonalMove(from, new Position(nx, ny))) {
+                            if (!isPalaceDiagonalMove(from, pos)) {
                                 continue;
                             }
                         }
 
-                        targets.add(new Position(nx, ny));
+                        targets.add(pos);
                     }
                 }
                 break;
@@ -210,15 +211,91 @@ public class Board {
             throw new BusinessException(ErrorCode.CANNOT_CAPTURE_SAME_TEAM);
         }
 
-        if (!isLegalMove(piece, from, to)) {
+        if (!validatePhysicalMove(piece, from, to)) {
             throw new BusinessException(ErrorCode.INVALID_MOVE_RULE);
         }
 
         pieceMap.remove(from);
         pieceMap.put(to, piece);
+
+        boolean isSuicideMove = isKingInCheck(currentTurn);
+
+        if (isSuicideMove) { // 자살 수인 경우 원상 복구 후 BusinessException을 발생시킴.
+            pieceMap.remove(to);
+            pieceMap.put(from, piece);
+            if (target != null) {
+                pieceMap.put(to, target);
+            }
+            throw new BusinessException(ErrorCode.KING_IS_IN_DANGER);
+        }
     }
 
     private boolean isLegalMove(Piece piece, Position from, Position to) {
+        if (!validatePhysicalMove(piece, from, to)) {
+            return false;
+        }
+
+        Piece target = pieceMap.get(to);
+
+        // 왕을 직접 공격하는 상황은 발생하지 않도록 조정
+        if (target != null && target.getType() == PieceType.GUNG) {
+            return false;
+        }
+
+        // 가상으로 이동 수행 -> 이동했을 때 상대의 장군 상태가 나오는지 확인
+        pieceMap.remove(from);
+        pieceMap.put(to, piece);
+
+        boolean isSuicideMove = isKingInCheck(piece.getTeam());
+
+        pieceMap.remove(to);
+        pieceMap.put(from, piece);
+        if (target != null) {
+            pieceMap.put(to, target);
+        }
+
+        return !isSuicideMove; // isSuicideMove == true 인 경우 자살수 이므로 이동이 불가능 하다는 false 를 반환하여야 함.
+    }
+
+    public boolean isKingInCheck(Team team) {
+        Position kingPos = findKingPosition(team);
+
+        for (Map.Entry<Position, Piece> entry : pieceMap.entrySet()) {
+            Piece enemy = entry.getValue();
+            Position enemyPos = entry.getKey();
+
+            if (enemy.getTeam() == team) continue;
+
+            if (validatePhysicalMove(enemy, enemyPos, kingPos)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private Position findKingPosition(Team team) {
+        for (Map.Entry<Position, Piece> entry : pieceMap.entrySet()) {
+            Piece p = entry.getValue();
+            if (p.getTeam() == team && p.getType() == PieceType.GUNG) {
+                return entry.getKey();
+            }
+        }
+        throw new BusinessException(ErrorCode.GAME_DATA_ERROR);
+    }
+
+    private boolean validatePhysicalMove(Piece piece, Position from, Position to) {
+        // 1. 장기판 범위 밖인지 확인
+        if (!Position.isValid(to.getX(), to.getY())) return false;
+
+        // 2. 제자리인지 확인
+        if (from.equals(to)) return false;
+
+        Piece target = pieceMap.get(to);
+
+        if (piece.isSameTeam(target)) {
+            return false;
+        }
+
         switch (piece.getType()) {
             case CHA:
                 return validateCha(from, to);
@@ -238,23 +315,20 @@ public class Board {
         }
     }
 
-    // --- 기물별 세부 로직 구현 (예시) ---
-
-    // [차] 직선 이동, 경로에 장애물 없어야 함
+    // 기물 설명 [차] : 직선 이동(궁성 내 대각 이동도 가능), 경로에 장애물 없어야 함
     private boolean validateCha(Position from, Position to) {
-        // 1. 이동 패턴 확인: 직선인가? (가로 or 세로)
+        // 직선 경로에 여부 확인 (가로 or 세로)
         boolean isStraight = (from.getX() == to.getX()) || (from.getY() == to.getY());
 
-        // 2. 이동 패턴 확인: 궁성 내 대각선인가?
+        // 궁성 내 대각 이동 가능 여부 확인
         boolean isPalaceDiagonal = isPalaceDiagonalMove(from, to);
 
-        // 3. 직선도 아니고, 궁성 대각선도 아니면 이동 규칙 위반
+        // 직선도 아니고, 궁성 대각선도 아니면 이동 규칙 위반
         if (!isStraight && !isPalaceDiagonal) {
             return false;
         }
 
-        // 4. 경로상의 장애물 검사 (직선, 대각선 공통)
-        // isPathClear는 두 좌표 사이의 경로를 한 칸씩 탐색하므로 대각선 경로 체크도 가능합니다.
+        // 경로상의 장애물 검사 (직선, 대각선 공통)
         return isPathClear(from, to);
     }
 
@@ -289,6 +363,7 @@ public class Board {
         return (y == 0 || y == 2 || y == 7 || y == 9);
     }
 
+    // 기물 설명 [졸/병] : 직선으로 1칸 이동(궁성 내 대각 이동도 가능), 후퇴가 불가능 함
     private boolean validateSoldier(Team team, Position from, Position to) {
         int dx = to.getX() - from.getX();
         int dy = to.getY() - from.getY();
@@ -296,46 +371,33 @@ public class Board {
         int absDx = Math.abs(dx);
         int absDy = Math.abs(dy);
 
-        // 1. 기본 이동 거리 검사: 직선 1칸(합 1) 또는 대각선 1칸(합 2)만 허용
-        // (2칸 이상 점프하거나, 제자리인 경우는 여기서 걸러짐)
+        // 1칸 이동 (직선, 대각선)
         if (!((absDx == 1 && absDy == 0) || (absDx == 0 && absDy == 1) || (absDx == 1 && absDy == 1))) {
             return false;
         }
 
-        // 2. 방향 정의 (Y좌표 기준 전진 방향)
-        // Han(Red, 위쪽): Y가 증가해야 전진 (+1)
-        // Cho(Green, 아래쪽): Y가 감소해야 전진 (-1)
+        // 방향 정의 (Y좌표 기준 전진 방향) - Cho는 Y가 감소해야 전진, Han은 Y가 증가해야 전진
         int forwardDy = (team == Team.HAN) ? 1 : -1;
 
-        // 3. [핵심] 후퇴 불가 검사
-        // dy가 전진방향의 반대(-forwardDy)라면 무조건 실패
-        // 예: Han이 -1(위)로 가려하거나, Cho가 +1(아래)로 가려할 때
+        // 후퇴 불가
         if (dy == -forwardDy) {
             return false;
         }
 
-        // 4. 이동 타입별 상세 검증
-
-        // 4-1. 직선 이동 (좌우 또는 전진)
+        // 직선 이동 (좌우 또는 전진)
         if (absDx + absDy == 1) {
-            // 좌우(dy=0)이거나 전진(dy=forwardDy)이면 OK (후퇴는 위에서 걸러짐)
             return true;
         }
 
-        // 4-2. 대각선 이동 (absDx=1, absDy=1)
+        // 대각선 이동 (absDx=1, absDy=1)
         if (absDx == 1 && absDy == 1) {
-            // 졸은 대각선으로 '옆'이나 '뒤'로 못 감. 오직 '전진 대각선'만 가능
-            if (dy != forwardDy) {
-                return false;
-            }
-            // 궁성 라인 위인지 확인
             return isPalaceDiagonalMove(from, to);
         }
 
         return false;
     }
 
-    // [마]: 날일(日)자 이동 + 멱 체크
+    // 기물 설명 [마]: 날일(日)자 이동 + 멱 체크
     private boolean validateMa(Position from, Position to) {
         int dx = to.getX() - from.getX();
         int dy = to.getY() - from.getY();
@@ -344,13 +406,10 @@ public class Board {
         int absDy = Math.abs(dy);
 
         // 1. 세로로 긴 날일자 (|dx|=1, |dy|=2)
-        // 예: 위로 두 칸, 옆으로 한 칸
         if (absDx == 1 && absDy == 2) {
             // 멱 위치 계산: 출발지에서 Y방향으로 1칸 떨어진 곳
-            // (dy가 2면 +1, dy가 -2면 -1 위치가 멱)
             Position myeok = new Position(from.getX(), from.getY() + (dy / 2));
 
-            // 멱에 기물이 있으면 이동 불가
             if (pieceMap.containsKey(myeok)) {
                 return false;
             }
@@ -358,13 +417,10 @@ public class Board {
         }
 
         // 2. 가로로 긴 날일자 (|dx|=2, |dy|=1)
-        // 예: 오른쪽으로 두 칸, 위로 한 칸
         if (absDx == 2 && absDy == 1) {
             // 멱 위치 계산: 출발지에서 X방향으로 1칸 떨어진 곳
-            // (dx가 2면 +1, dx가 -2면 -1 위치가 멱)
             Position myeok = new Position(from.getX() + (dx / 2), from.getY());
 
-            // 멱에 기물이 있으면 이동 불가
             if (pieceMap.containsKey(myeok)) {
                 return false;
             }
@@ -375,7 +431,7 @@ public class Board {
         return false;
     }
 
-    // [상]: 쓸용(用)자 이동 + 멱 체크
+    // 기물 설명 [상]: 쓸용(用)자 이동 + 멱 체크
     private boolean validateSang(Position from, Position to) {
         int dx = to.getX() - from.getX();
         int dy = to.getY() - from.getY();
@@ -384,15 +440,11 @@ public class Board {
         int absDy = Math.abs(dy);
 
         // 1. 세로로 긴 이동 (|dx|=2, |dy|=3)
-        // 예: 위로 3칸, 옆으로 2칸
         if (absDx == 2 && absDy == 3) {
-            // 멱1: 출발지에서 Y방향으로 1칸 (직선 경로)
             Position myeok1 = new Position(from.getX(), from.getY() + (dy / 3));
 
-            // 멱2: 출발지에서 Y방향으로 2칸, X방향으로 1칸 (마의 도착지점과 동일)
             Position myeok2 = new Position(from.getX() + (dx / 2), from.getY() + (dy / 3) * 2);
 
-            // 두 멱 중 하나라도 막혀있으면 이동 불가
             if (pieceMap.containsKey(myeok1) || pieceMap.containsKey(myeok2)) {
                 return false;
             }
@@ -400,15 +452,11 @@ public class Board {
         }
 
         // 2. 가로로 긴 이동 (|dx|=3, |dy|=2)
-        // 예: 오른쪽으로 3칸, 위로 2칸
         if (absDx == 3 && absDy == 2) {
-            // 멱1: 출발지에서 X방향으로 1칸 (직선 경로)
             Position myeok1 = new Position(from.getX() + (dx / 3), from.getY());
 
-            // 멱2: 출발지에서 X방향으로 2칸, Y방향으로 1칸 (마의 도착지점과 동일)
             Position myeok2 = new Position(from.getX() + (dx / 3) * 2, from.getY() + (dy / 2));
 
-            // 두 멱 중 하나라도 막혀있으면 이동 불가
             if (pieceMap.containsKey(myeok1) || pieceMap.containsKey(myeok2)) {
                 return false;
             }
@@ -419,20 +467,20 @@ public class Board {
         return false;
     }
 
-    // [포]: 직선 이동 + 다리 1개 + 포끼리 못 넘음/못 잡음
+    // 기물 설명 [포]: 직선 이동 + 다리 1개 + 포끼리 못 넘음/못 잡음
     private boolean validatePo(Position from, Position to) {
-        // 1. 이동 패턴 확인: 직선인가?
+        // 직선 경로인지 확인
         boolean isStraight = (from.getX() == to.getX()) || (from.getY() == to.getY());
 
-        // 2. 이동 패턴 확인: 궁성 내 대각선인가?
+        // 궁성 내 대각선인지 확인
         boolean isPalaceDiagonal = isPalaceDiagonalMove(from, to);
 
-        // 3. 직선도 아니고 대각선도 아니면 이동 불가
+        // 직선도 아니고 대각선도 아니면 이동 불가
         if (!isStraight && !isPalaceDiagonal) {
             return false;
         }
 
-        // 4. [규칙] 도착지에 있는 기물이 '포'인지 확인 (포는 포를 잡을 수 없음)
+        // [규칙 : 포는 포를 잡을 수 없음] 도착지에 있는 기물이 '포'인지 확인
         Piece target = pieceMap.get(to);
         if (target != null && target.getType() == PieceType.PO) {
             return false;
@@ -446,7 +494,7 @@ public class Board {
             return false; // 다리가 없거나, 2개 이상이면 이동 불가
         }
 
-        // 7. [규칙] 그 다리가 '포'인지 확인 (포는 포를 넘을 수 없음)
+        // [규칙 : 포는 포를 넘을 수 없음] 다리가 '포'인지 확인
         Piece bridge = bridges.get(0);
         if (bridge.getType() == PieceType.PO) {
             return false;
@@ -484,9 +532,8 @@ public class Board {
         return pieces;
     }
 
+    // 기물 설명 [궁사] : 궁성 범위 안에서 이동, 한 칸씩 이동 (직선, 대각선 이동 가능)
     private boolean validateGungSa(Position from, Position to) {
-        // 1. [규칙] 도착지가 궁성(Palace) 범위를 벗어나면 안 됨
-        // (출발지는 이미 궁/사가 있는 곳이니 당연히 궁성 안임)
         if (!isInPalace(to.getX(), to.getY())) {
             return false;
         }
@@ -496,27 +543,49 @@ public class Board {
         int absDx = Math.abs(dx);
         int absDy = Math.abs(dy);
 
-        // 2. [규칙] 이동 거리는 반드시 1칸이어야 함 (직선 1칸 or 대각선 1칸)
-        // dx, dy가 0, 1 범위를 넘어가거나 제자리(0,0)면 불가
         if (absDx > 1 || absDy > 1 || (absDx == 0 && absDy == 0)) {
             return false;
         }
 
-        // 3. 이동 패턴별 검증
-
-        // 3-1. 직선 이동 (가로 1칸 or 세로 1칸)
+        // 직선 이동 (가로 1칸 or 세로 1칸)
         if (absDx + absDy == 1) {
-            // 궁성 안에서는 모든 칸이 직선으로 연결되어 있으므로 무조건 통과
             return true;
         }
 
-        // 3-2. 대각선 이동 (가로 1칸 + 세로 1칸)
+        // 대각선 이동 (가로 1칸 + 세로 1칸)
         if (absDx == 1 && absDy == 1) {
-            // 대각선 이동은 'X'자 길 위에서만 가능
             return isPalaceDiagonalMove(from, to);
         }
 
         return false;
+    }
+
+    public boolean isCheckmate(Team team) {
+        // 1. 현재 장군 상태가 아니면 외통수일 수 없음
+        if (!isKingInCheck(team)) {
+            return false;
+        }
+
+        // 2. 내 모든 기물을 하나씩 움직여보며, 장군을 피할 수 있는지 확인
+        List<Position> myPieces = new ArrayList<>();
+        for (Map.Entry<Position, Piece> entry : pieceMap.entrySet()) {
+            if (entry.getValue().getTeam() == team) {
+                myPieces.add(entry.getKey());
+            }
+        }
+
+        for (Position from : myPieces) {
+            // 이 기물이 갈 수 있는 모든 곳을 조회 (getMovablePositions가 내부적으로 isLegalMove 호출 -> 자살수 체크됨)
+            List<Position> moves = getMovablePositions(from);
+
+            // 갈 곳이 하나라도 있다면(즉, 장군을 피하는 수가 있다면) 외통수가 아님
+            if (!moves.isEmpty()) {
+                return false;
+            }
+        }
+
+        // 3. 모든 기물을 다 살펴봤는데도 피할 수가 없음 -> 외통수!
+        return true;
     }
 
     // 직선 경로 장애물 확인 유틸리티
@@ -534,7 +603,7 @@ public class Board {
 
         while (x != destX || y != destY) {
             if (pieceMap.containsKey(new Position(x, y))) {
-                return false; // 가는 길에 뭔가 있다 -> 이동 불가
+                return false;
             }
             x += dx;
             y += dy;
@@ -542,9 +611,8 @@ public class Board {
         return true;
     }
 
-    // === Getters ===
     public Map<Position, Piece> getPieceMap() {
-        return new HashMap<>(pieceMap); // 외부 변조 방지를 위해 복사본 반환
+        return new HashMap<>(pieceMap);
     }
 
     public Piece getPiece(Position position) {
