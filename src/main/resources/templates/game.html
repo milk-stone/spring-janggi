@@ -115,7 +115,16 @@
         .piece.HAN { color: var(--han-color); border-color: #b71c1c; }
         .piece.SOLDIER { font-size: 22px; width: 44px; height: 44px; }
         .piece.GUNG { font-size: 32px; width: 56px; height: 56px; border-width: 3px; }
+        .piece.king-in-check {
+            box-shadow: 0 0 15px 5px rgba(255, 0, 0, 0.8); /* 붉은 광채 */
+            animation: pulse 1s infinite alternate; /* 깜빡임 효과 */
+            border-color: #ff0000 !important;
+        }
 
+        @keyframes pulse {
+            from { transform: scale(1); }
+            to { transform: scale(1.1); }
+        }
         /* === 모달 === */
         .game-over-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -248,9 +257,21 @@
 
     // === [추가] 장군 알림 ===
     // 페이지 로드 시, 내 턴이고 장군 상태라면 알림
-    if (gameStatus === 'IN_PROGRESS' && myTeam === currentTurn && isCheck) {
-        // 약간의 지연을 줘서 화면이 먼저 뜨고 알림이 나오게 함
-        setTimeout(() => alert("⚠️ 장군입니다! 왕을 보호하세요!"), 100);
+    if (gameStatus === 'IN_PROGRESS' && isCheck) {
+        // 1. 알림창 (선택 사항)
+        if (myTeam === currentTurn) {
+            setTimeout(() => alert("⚠️ 장군! 왕을 보호하세요!"), 100);
+        }
+
+        // 2. [추가] 현재 턴인 쪽의 왕(GUNG)을 찾아서 붉은 효과 주기
+        // DOM이 다 그려진 후 실행하기 위해 setTimeout 사용
+        setTimeout(() => {
+            // 현재 턴(CHO or HAN)에 해당하는 왕 기물을 찾음
+            const kingPiece = document.querySelector(`.piece.GUNG.${currentTurn}`);
+            if (kingPiece) {
+                kingPiece.classList.add('king-in-check');
+            }
+        }, 100);
     }
 
     // === AJAX Polling ===
