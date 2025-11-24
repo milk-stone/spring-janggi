@@ -19,6 +19,7 @@ public enum ErrorCode {
     // * Game
     INVALID_GAME_STATUS(HttpStatus.BAD_REQUEST, "GE_001", "게임이 진행 중인 상태가 아닙니다."),
     GAME_NOT_FOUND(HttpStatus.NOT_FOUND, "GE_002", "해당 게임이 존재하지 않습니다."),
+    INVALID_STATUS_NOT_WAITING(HttpStatus.BAD_REQUEST, "GE_003", "이미 시작되었거나 종료된 게임입니다."),
     // * Position
     INVALID_POSITION_FORMAT(HttpStatus.BAD_REQUEST, "PE_001", "유효하지 않은 좌표 포맷입니다."),
     INVALID_ROW_FORMAT(HttpStatus.BAD_REQUEST, "PE_002", "좌표의 행(Row)은 숫자여야 합니다."),

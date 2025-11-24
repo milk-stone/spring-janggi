@@ -2,6 +2,7 @@ package com.woowa.open_mission.spring_janggi.service;
 
 import com.woowa.open_mission.spring_janggi.domain.core.*;
 import com.woowa.open_mission.spring_janggi.domain.entity.Game;
+import com.woowa.open_mission.spring_janggi.domain.entity.Member;
 import com.woowa.open_mission.spring_janggi.domain.entity.MoveHistory;
 import com.woowa.open_mission.spring_janggi.domain.repository.GameRepository;
 import com.woowa.open_mission.spring_janggi.domain.repository.MoveHistoryRepository;
@@ -10,6 +11,8 @@ import com.woowa.open_mission.spring_janggi.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -78,8 +81,35 @@ public class JanggiService {
         Board initialBoard = new Board();
         String json = boardMapper.toJson(initialBoard);
 
-        Game game = Game.createNewGame(null, null, json);
+        Game game = Game.createGame("새로운 게임", null, json);
         Game savedGame = gameRepository.save(game);
         return savedGame.getId();
+    }
+
+    // [추가] 게임 목록 조회
+    public List<Game> findAllGames() {
+        return gameRepository.findAll(); // 실제론 페이징 필요
+    }
+
+    // [추가] 방 만들기
+    @Transactional
+    public Long createRoom(String title, Member host) {
+        Board initialBoard = new Board();
+        String json = boardMapper.toJson(initialBoard);
+
+        Game game = Game.createGame(title, host, json);
+        gameRepository.save(game);
+        return game.getId();
+    }
+
+    // [추가] 방 참가하기
+    @Transactional
+    public void joinRoom(Long gameId, Member guest) {
+        Game game = getGame(gameId);
+        // (옵션) 방장이 자기 방에 참가하려는 경우 차단
+        if (game.getChoPlayer().getId().equals(guest.getId())) {
+            return;
+        }
+        game.join(guest);
     }
 }

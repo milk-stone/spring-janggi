@@ -24,6 +24,8 @@ public class Game {
     @Column(name = "game_id")
     private Long id;
 
+    private String title;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cho_player_id")
     private Member choPlayer;
@@ -56,16 +58,25 @@ public class Game {
 
     private LocalDateTime finishedAt;
 
-    public static Game createNewGame(Member choPlayer, Member hanPlayer, String initialBoardState) {
+    public static Game createGame(String title, Member host, String initialBoardState) {
         Game game = new Game();
-        game.choPlayer = choPlayer;
-        game.hanPlayer = hanPlayer;
+        game.title = title;
+        game.choPlayer = host;
+        game.hanPlayer = null;
         game.boardState = initialBoardState;
-        game.status = GameStatus.IN_PROGRESS;
+        game.status = GameStatus.WAITING;
         game.currentTurn = Team.CHO;
         game.moveCount = 0;
         game.createdAt = LocalDateTime.now();
         return game;
+    }
+
+    public void join(Member guest) {
+        if (this.status != GameStatus.WAITING) {
+            throw new BusinessException(ErrorCode.INVALID_STATUS_NOT_WAITING);
+        }
+        this.hanPlayer = guest;
+        this.status = GameStatus.IN_PROGRESS;
     }
 
     public void updateMove(String newBoardState, Team nextTurn) {

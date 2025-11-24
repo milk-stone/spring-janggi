@@ -4,6 +4,7 @@ import com.woowa.open_mission.spring_janggi.controller.dto.MoveRequest;
 import com.woowa.open_mission.spring_janggi.domain.core.Board;
 import com.woowa.open_mission.spring_janggi.domain.core.Team;
 import com.woowa.open_mission.spring_janggi.domain.entity.Game;
+import com.woowa.open_mission.spring_janggi.domain.entity.Member;
 import com.woowa.open_mission.spring_janggi.service.BoardMapper;
 import com.woowa.open_mission.spring_janggi.service.JanggiService;
 import lombok.RequiredArgsConstructor;
@@ -43,8 +44,15 @@ public class JanggiController {
 
     // 3. 테스트용: 새 게임 생성 후 입장
     @GetMapping("/games/new")
-    public String createGame() {
-        Long gameId = janggiService.createGame();
+    public String createGame(@SessionAttribute(name = "loginMember", required = false) Member loginMember) {
+        if (loginMember == null) {
+            return "redirect:/login";
+        }
+
+        String title = loginMember.getNickname() + "님의 대국";
+
+        Long gameId = janggiService.createRoom(title, loginMember);
+
         return "redirect:/games/" + gameId;
     }
 }

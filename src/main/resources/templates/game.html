@@ -165,11 +165,32 @@
             text-align: center;
             box-shadow: 0 10px 25px rgba(0,0,0,0.5);
             border: 5px solid #e6b87d;
+            min-width: 300px;
         }
 
         .winner-text {
             font-size: 2em; font-weight: bold; margin: 20px 0; color: #333;
         }
+
+        .modal-buttons {
+            margin-top: 30px;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .btn-modal {
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-lobby { background-color: #555; }
+        .btn-new { background-color: #2e7d32; }
 
         @keyframes fadeIn {
             from { opacity: 0; transform: scale(0.9); }
@@ -190,11 +211,11 @@
             </span>
     </div>
 
-    <!-- [추가] 점수 현황판 -->
+    <!-- 점수 현황판 -->
     <div style="margin-top: 10px; font-size: 0.9em; font-weight: bold;">
-        <span style="color: var(--cho-color)">초: <span th:text="${choScore}">73.0</span>점</span>
+        <span style="color: var(--cho-color)">초: <span th:text="${choScore}">0.0</span>점</span>
         <span style="margin: 0 10px; color: #ccc;">|</span>
-        <span style="color: var(--han-color)">한: <span th:text="${hanScore}">73.5</span>점</span>
+        <span style="color: var(--han-color)">한: <span th:text="${hanScore}">0.0</span>점 (덤 1.5)</span>
     </div>
 
     <div style="margin-top: 5px; color: #666;">
@@ -235,25 +256,27 @@
     </div>
 </div>
 
-<!-- [추가] 게임 종료 알림 모달 (게임 상태가 FINISHED일 때만 표시) -->
+<!-- [추가/수정] 게임 종료 알림 모달 -->
 <div th:if="${game.status.name() == 'FINISHED'}" class="game-over-overlay">
     <div class="modal-content">
         <h1>🏆 게임 종료! 🏆</h1>
         <div class="winner-text">
-            <!-- 승리 팀 설명 출력 -->
             <span th:text="${game.winner.description}"></span>
         </div>
         <p th:text="'총 ' + ${game.moveCount} + '수 만에 승부가 났습니다.'"></p>
-        <div style="margin-top: 20px;">
-            <a href="/games/new" style="text-decoration: none; color: white; background-color: #2e7d32; padding: 10px 20px; border-radius: 5px; font-weight: bold;">
-                다시 한 판 하기
-            </a>
+
+        <div class="modal-buttons">
+            <!-- 로비로 이동 버튼 ( / 경로) -->
+            <a href="/" class="btn-modal btn-lobby">로비로 나가기</a>
+
+            <!-- 다시 한 판 버튼 (로그인된 사용자 정보로 새 방 생성) -->
+            <a href="/games/new" class="btn-modal btn-new">다시 한 판 하기</a>
         </div>
     </div>
 </div>
 
 <div style="margin-top: 20px;">
-    <a href="/games/new" style="text-decoration: none; color: #555; border: 1px solid #ccc; padding: 5px 10px; border-radius: 5px; background: white;">🔄 새 게임 시작</a>
+    <a href="/" style="text-decoration: none; color: #555; border: 1px solid #ccc; padding: 5px 10px; border-radius: 5px; background: white;">🏠 로비로 이동</a>
 </div>
 
 <form id="moveForm" method="post" th:action="@{/games/{id}/move(id=${game.id})}">
@@ -271,7 +294,7 @@
     }
 
     function handleClick(x, y) {
-        // [추가] 게임이 종료되었으면 클릭 무시 (Thymeleaf 값을 JS 변수로 주입)
+        // 게임이 종료되었으면 클릭 무시
         const status = "[[${game.status}]]";
         if (status === 'FINISHED') {
             return;
