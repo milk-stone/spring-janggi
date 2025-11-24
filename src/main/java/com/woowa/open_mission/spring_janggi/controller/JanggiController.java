@@ -1,5 +1,6 @@
 package com.woowa.open_mission.spring_janggi.controller;
 
+import com.woowa.open_mission.spring_janggi.controller.dto.GameStatusResponse;
 import com.woowa.open_mission.spring_janggi.controller.dto.MoveRequest;
 import com.woowa.open_mission.spring_janggi.domain.core.Board;
 import com.woowa.open_mission.spring_janggi.domain.core.Team;
@@ -19,40 +20,29 @@ public class JanggiController {
     private final JanggiService janggiService;
     private final BoardMapper boardMapper;
 
-    // 1. 게임 방 입장 (화면 렌더링)
     @GetMapping("/games/{id}")
-    public String gameView(@PathVariable Long id, Model model) {
-        Game game = janggiService.getGame(id);
+    public String gameView(@PathVariable Long id, Model model,
+                           @SessionAttribute(name = "loginMember", required = false) Member loginMember) {
+        if (loginMember == null) return "redirect:/login";
 
-        // 화면에 뿌려줄 Board 객체 복원
+        Game game = janggiService.getGame(id);
         Board board = boardMapper.toBoard(game.getBoardState());
 
         model.addAttribute("game", game);
         model.addAttribute("board", board);
-
         model.addAttribute("choScore", board.calculateScore(Team.CHO));
         model.addAttribute("hanScore", board.calculateScore(Team.HAN));
+        model.addAttribute("loginMember", loginMember);
+
+        boolean isCheck = board.isKingInCheck(game.getCurrentTurn());
+        model.addAttribute("isCheck", isCheck);
         return "game";
     }
 
-    // 2. 말 이동 요청 (POST)
-    @PostMapping("/games/{id}/move")
-    public String movePiece(@PathVariable Long id, @ModelAttribute MoveRequest request) {
-        janggiService.movePiece(id, request.from(), request.to());
-        return "redirect:/games/" + id;
-    }
-
-    // 3. 테스트용: 새 게임 생성 후 입장
     @GetMapping("/games/new")
     public String createGame(@SessionAttribute(name = "loginMember", required = false) Member loginMember) {
-        if (loginMember == null) {
-            return "redirect:/login";
-        }
-
-        String title = loginMember.getNickname() + "님의 대국";
-
-        Long gameId = janggiService.createRoom(title, loginMember);
-
+        if (loginMember == null) return "redirect:/login";
+        Long gameId = janggiService.createRoom(loginMember.getNickname() + "님의 대국", loginMember);
         return "redirect:/games/" + gameId;
     }
 }

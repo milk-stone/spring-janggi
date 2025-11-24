@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <script th:inline="javascript">
+        /* 서버에서 전달받은 에러 메시지를 알림창으로 띄우고, 이전 페이지로 돌아감 */
+        var message = [[${errorMessage}]];
+        alert(message);
+        history.back();
+    </script>
+</head>
+<body>
+</body>
+</html>
